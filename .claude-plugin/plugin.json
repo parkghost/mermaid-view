@@ -1,7 +1,7 @@
 {
   "name": "mermaid-view",
   "version": "0.1.0",
-  "description": "A browser editor for Mermaid diagrams: those of Claude's answers and those in your project's Markdown documents and .mmd files. Zoom, minimap, Monaco source editing linked to the diagram, themes, a library, git history and export; edits go back to Claude",
+  "description": "A Claude Code mod: a browser editor for Mermaid diagrams, those of Claude's answers and those in your project's Markdown documents and .mmd files. Zoom, minimap, Monaco source editing linked to the diagram, themes, a library, git history and export; edits go back to Claude",
   "author": {
     "name": "parkghost"
   },

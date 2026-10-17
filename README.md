@@ -1,8 +1,9 @@
 # mermaid-view
 
-A browser editor for Mermaid diagrams: the diagrams of Claude's answers, and those in your project's
-Markdown documents and `.mmd` files. View them zoomed and themed, edit their source with a real code
-editor linked to the drawing, keep their history, and hand your edits back to Claude.
+A Claude Code mod with a browser editor for Mermaid diagrams: the diagrams of Claude's answers, and
+those in your project's Markdown documents and `.mmd` files. View them zoomed and themed, edit their
+source with a real code editor linked to the drawing, keep their history, and hand your edits back to
+Claude.
 
 It comes in two parts:
 
