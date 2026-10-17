@@ -1,0 +1,34 @@
+{
+  "name": "mermaid-view",
+  "version": "0.1.0",
+  "description": "A browser editor for Mermaid diagrams: those of Claude's answers and those in your project's Markdown documents and .mmd files. Zoom, minimap, Monaco source editing linked to the diagram, themes, a library, git history and export; edits go back to Claude",
+  "author": {
+    "name": "parkghost"
+  },
+  "userConfig": {
+    "dataDir": {
+      "type": "string",
+      "title": "Data folder",
+      "description": "Where pages, edits and their git history are kept (~ is your home folder).",
+      "default": "~/.local/share/mermaid-view"
+    },
+    "keepDays": {
+      "type": "number",
+      "title": "Keep unedited pages (days)",
+      "description": "Pages neither edited nor pinned are removed after this many days; 0 keeps them all.",
+      "default": 90
+    },
+    "openFiles": {
+      "type": "boolean",
+      "title": "Open files Claude writes",
+      "description": "When Claude writes a project document or .mmd file that holds Mermaid diagrams, open it in the editor (once per file per session).",
+      "default": true
+    },
+    "reuseTab": {
+      "type": "boolean",
+      "title": "Show new diagrams in the open tab",
+      "description": "Show a new answer's diagrams, or a project file Claude writes, in the editor tab already open instead of opening a new tab. A tab with edits in progress offers the diagram instead of switching; a tab hidden and unused for 30 minutes is passed over.",
+      "default": true
+    }
+  }
+}

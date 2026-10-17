@@ -1,0 +1,5 @@
+# Written by Claude Code when it loads the mod: the plugin API's types for the editor.
+.claude-plugin/types/
+__pycache__/
+node_modules/
+.ruff_cache/

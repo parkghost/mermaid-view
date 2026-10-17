@@ -1,0 +1,1349 @@
+{
+  "mermaid": "12.1.0",
+  "sources": [
+    "https://github.com/mermaid-js/mermaid/tree/mermaid@12.1.0/packages/mermaid/src/docs/syntax",
+    "https://github.com/mermaid-js/mermaid/tree/mermaid@12.1.0/packages/mermaid/src/diagrams (detectors, jison grammars)",
+    "https://github.com/mermaid-js/mermaid/tree/mermaid@12.1.0/packages/parser/src/language (langium grammars)",
+    "https://github.com/mermaid-js/mermaid/tree/mermaid@12.1.0/packages/mermaid/src/docs/config"
+  ],
+  "common": [
+    "The header keyword is the first statement after front matter, %%{...}%% directives and %% comments; it alone decides the diagram type. Keywords are case-sensitive unless a type's notes say otherwise.",
+    "Comments: a whole line starting with %% (indentation allowed). Do not put %% after a statement on the same line: several types read it as text.",
+    "Front matter: a YAML block between two --- lines as the very first lines, e.g. ---\\ntitle: Orders\\nconfig:\\n  theme: base\\n  look: handDrawn\\n---. Keys: title and config (any Mermaid config except the secure ones).",
+    "%%{init: {\"theme\": \"forest\"}}%% directives are deprecated since 10.5.0 (still read): put configuration in front matter config instead.",
+    "accTitle: text and accDescr: text (or accDescr { several lines }) give the drawing an accessible title and description in most types; a type's notes say when it lacks them.",
+    "This editor renders with securityLevel strict: HTML in labels is encoded and click callbacks are off. Theme, look (classic, neo, handDrawn) and layout (dagre, elk) are the page's choices unless front matter config sets them."
+  ],
+  "types": [
+    {
+      "id": "flowchart",
+      "name": "Flowchart",
+      "purpose": "Nodes (shapes) joined by edges to show process steps, decisions and dependencies; optional subgraph grouping.",
+      "docs": "https://mermaid.js.org/syntax/flowchart.html",
+      "headers": [
+        "flowchart",
+        "graph",
+        "flowchart-elk"
+      ],
+      "syntax": [
+        "flowchart LR  - header + optional direction: TB, TD (same as TB), BT, LR, RL; no direction means TB",
+        "A  - bare node, label = id",
+        "A[Text]  - rectangle; other shapes: A(round) A([stadium]) A[[subroutine]] A[(cylinder)] A((circle)) A(((double circle))) A>asymmetric] A{diamond} A{{hexagon}} A[/lean right/] A[\\lean left\\] A[/trapezoid\\] A[\\inv trapezoid/]",
+        "A[\"Text (with) special chars\"]  - quote labels containing ( ) [ ] { } | etc.; #quot; #35; #9829; are entity escapes",
+        "A[\"`**bold** _italic_`\"]  - markdown string label (backtick inside double quotes)",
+        "A@{ shape: cyl, label: \"Orders DB\" }  - extended shape syntax; shape names lowercase with hyphens (rect, rounded, stadium, fr-rect, cyl, circle, diam, hex, lean-r, lean-l, trap-b, trap-t, dbl-circ, odd, text, doc, docs, delay, h-cyl, lin-cyl, notch-rect, lin-rect, sm-circ, fr-circ, f-circ, fork, hourglass, brace, brace-r, braces, bolt, tri, flip-tri, sl-rect, st-rect, win-pane, div-rect, curv-trap, notch-pent, bow-rect, cross-circ, tag-doc, tag-rect, lin-doc, flag, datastore, folder, bucket, console, browser, person, cloud, bang) plus aliases like process, decision, database, document",
+        "A@{ icon: \"fa:user\", form: circle, label: \"User\", pos: t, h: 60 }  /  A@{ img: \"https://x/y.png\", label: \"L\", w: 60, h: 60, constraint: on }  - icon and image nodes",
+        "A --> B --> C  - chaining; A & B --> C & D  - fan-out/fan-in with &",
+        "A -->|label| B  or  A -- label --> B  - edge label (dotted: A -. label .-> B, thick: A == label ==> B)",
+        "A e1@--> B  then  e1@{ animate: true }  /  e1@{ animation: fast }  /  e1@{ curve: linear }  - edge id + edge metadata",
+        "subgraph id [Title] ... end  /  subgraph \"Title with spaces\" ... end  /  subgraph Title ... end",
+        "direction LR  - inside a subgraph sets that subgraph's direction",
+        "classDef warn fill:#fee,stroke:#c00  /  class A,B warn  /  A:::warn  /  style A fill:#f9f,stroke:#333",
+        "linkStyle 0,2 stroke:#f00  /  linkStyle default interpolate basis  - edge styling by 0-based edge index",
+        "click A \"https://example.com\" \"tooltip\" _blank  /  click A callbackFn  - interaction (honored only with suitable securityLevel)",
+        "A; B --> C  - semicolons can separate statements"
+      ],
+      "relations": [
+        "-->  arrow;  ---  open line;  -.->  dotted arrow;  -.-  dotted line;  ==>  thick arrow;  ===  thick line;  ~~~  invisible link",
+        "--o / --x  circle or cross end;  <-->  o--o  x--x  bidirectional",
+        "extra dashes lengthen the edge: --->  ---->  -..->  ===>  (with mid-label, add dashes on the right: A -- No ----> B)"
+      ],
+      "blocks": [
+        "subgraph id [Title] ... end  - nestable; edges may target a subgraph id; indentation is cosmetic",
+        "A@{ ... }  - YAML metadata; may span lines until the closing }"
+      ],
+      "notes": [
+        "graph and flowchart are equivalent in 12.x (both parse as flowchart-v2); flowchart-elk forces ELK layout. flowchart-v2 is NOT an accepted header keyword.",
+        "v12 defaults for flowchart: ELK layout, neo look, redux-color theme; set layout: dagre / look: classic / theme: default in front matter for the old appearance.",
+        "A bare lowercase end as a node id breaks parsing (A --> end); use End, END or a different id. end inside a label (A[end]) is fine.",
+        "A ---oB or A ---xB makes a circle/cross edge; put a space or capital letter before node ids starting with o or x.",
+        "Unquoted labels cannot contain ( ) [ ] { } | or quotes; wrap the label in double quotes. Commas in style values must be escaped as \\, (e.g. stroke-dasharray).",
+        "@{ shape: ... } names must be lowercase and use hyphens: Rect or manual_file fail with 'No such shape'. Agentflow aliases (task, tool, input, refdoc, action) are not flowchart shapes.",
+        "Collapsed subgraph (v11.17+): subgraph needs an id, then id@{ view: collapsed }.",
+        "A subgraph's own direction is ignored when any of its nodes link to nodes outside it."
+      ],
+      "houseStyle": [
+        "Node text in brackets and double quotes: A[\"Start\"], B(\"Round\"), C{\"Decide?\"} (lint node-text-quote, auto-fixable).",
+        "Node ids only letters, digits and underscores: order_service, not order-service or Bestell Service (lint node-id).",
+        "Edge labels in double quotes: A -->|\"yes\"| B (lint edge-label-quote, auto-fixable).",
+        "No special characters in edge labels such as →, <, >, #: write ->, to, vs (lint edge-label-chars).",
+        "Subgraph titles with spaces in double quotes: subgraph \"Payment Service\" (lint subgraph-quote, auto-fixable).",
+        "No classDef, style, linkStyle or click unless asked for (lint no-styling, info)."
+      ],
+      "example": "flowchart LR\n    start([\"Start\"]) --> check{\"Valid?\"}\n    check -->|\"yes\"| save@{ shape: cyl, label: \"Orders DB\" }\n    check -->|\"no\"| fix[\"Fix input\"]\n    fix retry@-.-> check\n    retry@{ animate: true }\n    subgraph svc [\"Order service\"]\n        direction TB\n        api[\"API\"] --> worker[[\"Workers\"]]\n    end\n    save ==> api"
+    },
+    {
+      "id": "swimlane",
+      "name": "Swimlane",
+      "purpose": "A flowchart split into lanes (top-level subgraphs) to show who owns each step and where work is handed off.",
+      "docs": "https://mermaid.js.org/syntax/swimlanes.html",
+      "headers": [
+        "swimlane-beta"
+      ],
+      "syntax": [
+        "swimlane-beta LR  - header + optional direction: TB, TD, BT, LR, RL; default TB",
+        "subgraph sales [Sales team] ... end  - each TOP-LEVEL subgraph is one lane (id + display label)",
+        "subgraph Customer ... end  /  subgraph \"Ops team\" ... end  - lane without explicit id",
+        "lead[Qualify lead]  - node, declared inside the lane that owns it; all flowchart shapes work: A(round) A([stadium]) A{decision} A((circle)) A[(db)] A@{ shape: doc }",
+        "lead --> quote  - edge within a lane or across lanes",
+        "decide -->|Approved| create  /  decide -- Needs changes --> apply  - labelled edge (label cross-lane handoffs)",
+        "classDef attention fill:#fff2cc,stroke:#d6a500  /  class review attention  /  style A fill:#eee",
+        "A e1@--> B  /  e1@{ animate: true }  - edge ids and metadata as in flowchart"
+      ],
+      "relations": [
+        "-->  arrow;  ---  line;  -.->  dotted arrow;  ==>  thick arrow;  ~~~  invisible; --o --x <--> as in flowchart",
+        "A -->|text| B  or  A -- text --> B  - label"
+      ],
+      "blocks": [
+        "subgraph id [Lane label] ... end  - lane; nested subgraphs inside a lane are ordinary groups, not lanes"
+      ],
+      "notes": [
+        "The -beta suffix is required: swimlane LR is not detected. Available since v11.16.",
+        "Same parser/DB/renderer as flowchart (only layout and lane styles differ), so every flowchart statement, shape, edge, classDef/style and the lowercase-end caveat apply unchanged.",
+        "The keyword is subgraph, not lane; only top-level subgraphs become lanes.",
+        "A node belongs to the first lane (in source order) whose body mentions it, even only inside an edge; declare each node in its own lane and write cross-lane edges after the lanes, outside them.",
+        "v12 default look is neo with the redux-color theme (front matter theme: default / look: classic for the old appearance)."
+      ],
+      "example": "swimlane-beta LR\n    subgraph customer [Customer]\n        submit([Submit order])\n        confirm[Confirm delivery]\n    end\n    subgraph store [Store]\n        check{In stock?}\n        pack[Pack items]\n    end\n    subgraph carrier [Carrier]\n        deliver[Deliver package]\n    end\n    submit --> check\n    check -->|yes| pack --> deliver --> confirm\n    check -->|no| submit"
+    },
+    {
+      "id": "agentflow",
+      "name": "Agent flow",
+      "purpose": "Agentic workflows: agents/flows as containers, tasks, tools, inputs and decisions inside them, and sequence/reference/failure edges between them.",
+      "docs": "https://mermaid.js.org/syntax/agentflow.html",
+      "headers": [
+        "agentflow-beta"
+      ],
+      "syntax": [
+        "agentflow-beta TB  - header + optional direction: TB, TD, BT, LR, RL; default TB",
+        "id[\"Label\"]@{ shape: task }  - node; agentflow shape aliases: task, tool, input, decision, refdoc, action (any flowchart shape name also works, e.g. cyl, doc)",
+        "id[Label]  /  id(Label)  /  id{Q?}  /  id[(DB)]  - flowchart bracket shapes also parse",
+        "flow id[\"Agent name\"] ... end  - container (agent/flow); nests; flow id ... end without label is allowed",
+        "flow id[\"Agent\"]@{ model: \"m\", instruction: \"...\" } ... end  - container metadata inline after the label",
+        "global ... end  - nodes declared inside stay at top level even when referenced in flows; takes no id/label/metadata",
+        "connector gh[\"GitHub API\"]  then  gh@{ protocol: \"http\", endpoint: \"https://api.github.com\" }  - external system",
+        "tool@{ shape: tool, connectorRef: \"gh.create_issue\", params: \"city :: String\", returns: \"Report\" }  - binding/contract metadata (free YAML keys are kept)",
+        "id@{ view: collapsed }  - collapse a container; id@{ algorithm: \"elk.rectpacking\" }  - per-container ELK algorithm",
+        "fetch@{ shape: tool, retry: 2 }  - metadata; the @{ ... } block may also span several lines (YAML)",
+        "a --> b --> c  /  a & b --> c  - chaining and &",
+        "a e1@--> b  /  e1@{ animate: true }  - edge id + metadata (curve, animate, animation)",
+        "classDef / class / style / linkStyle / click / direction  - same forms as flowchart"
+      ],
+      "relations": [
+        "-->  sequence (control/data flows to target); longer ---> also accepted",
+        "-.-  reference (source consults target; no control passes); -..- also accepted",
+        "--x  failure path",
+        "a -- label --> b  /  a -- label --x b  /  a -->|label| b  - labels on --> and --x only"
+      ],
+      "blocks": [
+        "flow id[\"Label\"] ... end  - container, nests to any depth",
+        "global ... end  - top-level pinning block, may appear anywhere (even inside a flow)"
+      ],
+      "notes": [
+        "New in v12; the -beta suffix is required (agentflow alone is not detected).",
+        "Only three edge operators exist: -->, -.-, --x. Flowchart edges ==>, -.->, ---, <-->, --o, ~~~ and dotted labels (-. text .-) are syntax errors.",
+        "Containers use flow ... end; subgraph is NOT accepted.",
+        "Agentflow shape aliases (task, tool, input, decision, refdoc, action) are valid only here; flowchart rejects them.",
+        "Unknown shape names fail ('No such shape'); unknown metadata keys are preserved, never rejected. __proto__/constructor/prototype keys are stripped.",
+        "%% comments are allowed at the end of a line, not just on their own line.",
+        "Defaults: ELK layout, neo look, redux-color theme; own config namespace agentflow (nodeSpacing, rankSpacing, diagramPadding, useMaxWidth, titleTopMargin)."
+      ],
+      "example": "agentflow-beta TB\n    connector llm[\"LLM API\"]\n    llm@{ protocol: \"http\", endpoint: \"https://api.example.com/chat\" }\n    global\n        guide[\"Style guide\"]@{ shape: refdoc }\n    end\n    brief[\"Release brief\"]@{ shape: input }\n    flow writer[\"Drafting Agent\"]@{ model: \"claude-sonnet\" }\n        draft[\"Draft the notes\"]@{ shape: task }\n        search[\"changelog_search\"]@{ shape: tool, connectorRef: \"llm.chat\" }\n        draft --> search\n        draft -.- guide\n    end\n    flow reviewer[\"Review Agent\"]\n        check[\"Accurate?\"]@{ shape: decision }\n    end\n    publish[\"Publish\"]@{ shape: action }\n    brief --> draft\n    search --> check\n    check -- yes --> publish\n    check -- no --x draft"
+    },
+    {
+      "id": "sequence",
+      "name": "Sequence",
+      "purpose": "Messages exchanged over time between participants, with activations, notes and control-flow fragments.",
+      "docs": "https://mermaid.js.org/syntax/sequenceDiagram.html",
+      "headers": [
+        "sequenceDiagram"
+      ],
+      "syntax": [
+        "participant A  /  participant A as Alice  - declare (optional; order of declaration = column order)",
+        "actor U as User  - stick-figure participant",
+        "participant DB@{ \"type\": \"database\" } as Orders DB  - stereotype: boundary, control, entity, database, collections, queue; JSON object, alias via as or \"alias\": \"...\"",
+        "A->>B: text  - message; the colon is required (A->>B: with empty text is ok)",
+        "A->>+B: req  /  B-->>-A: resp  - activate target / deactivate source with + / -",
+        "activate B  /  deactivate B  - explicit activation",
+        "Note right of A: text  /  Note left of A: text  /  Note over A,B: text",
+        "create participant C  then a message to C  /  destroy C  then a message to or from C",
+        "autonumber  /  autonumber 10 5  /  autonumber off  - sequence numbers (start, step)",
+        "title My title  - diagram title",
+        "link A: Dashboard @ https://x  /  links A: {\"Wiki\": \"https://y\"}  - actor menu",
+        "A->>()B: x  /  A()->>B: x  /  A()->>()B: x  - central (lifeline) connections",
+        "Message text: <br/> for line breaks; #59; for ';' and #35; for '#'"
+      ],
+      "relations": [
+        "->>  solid arrow;  -->>  dotted arrow",
+        "->  solid line no head;  -->  dotted line no head",
+        "-x  --x  cross (lost/terminated);  -)  --)  open async arrow",
+        "<<->>  <<-->>  bidirectional solid/dotted",
+        "half arrows: -|\\  --|\\  -|/  --|/  (top/bottom half);  /|-  \\|-  /|--  \\|--  (reverse);  -\\\\  -//  --\\\\  --//  (stick);  //-  \\\\-  //--  \\\\--  (reverse stick)"
+      ],
+      "blocks": [
+        "loop text ... end",
+        "alt cond ... else other ... end",
+        "opt cond ... end",
+        "par label ... and label ... end  /  par_over label ... and ... end",
+        "critical label ... option label ... end",
+        "break label ... end",
+        "rect rgb(200, 220, 255) ... end  /  rect rgba(0,0,255,.1) ... end  - background highlight; nestable",
+        "box Aqua Team name ... participants ... end  - group participants; color first, then label; box transparent Name"
+      ],
+      "notes": [
+        "Header is case-sensitive (sequenceDiagram); statement keywords are case-insensitive (Note/note, LOOP/loop).",
+        "# starts a comment: '#' in message, note or box text truncates the rest of the line, so hex colors (box #f00) do not work; use named colors, rgb() or hsl(), and #35; for a literal #.",
+        "; ends a statement, so a semicolon inside message text splits the line; use #59;.",
+        "%% comments belong on their own line; after a message colon they become part of the text.",
+        "Participant ids may contain spaces (participant Alice Smith) but not : , ; < > or @; use participant X as Long label for display names.",
+        "No subgraph, no classDef/class/style statements; styling is via theme/CSS only.",
+        "The doc's half-arrow table lists \\\\- twice; per the grammar \\|- is solid reverse bottom half and \\\\- is solid reverse bottom stick."
+      ],
+      "example": "sequenceDiagram\n    autonumber\n    actor U as User\n    participant API@{ \"type\": \"boundary\" } as Public API\n    participant DB@{ \"type\": \"database\" } as Orders DB\n    U->>+API: POST /orders\n    API->>DB: insert order\n    alt stored\n        DB-->>API: id\n        API-->>U: 201 Created\n    else failure\n        DB--xAPI: error\n        API-->>U: 500\n    end\n    Note over U,API: retries allowed\n    loop every 5s\n        U-)API: poll status\n    end\n    deactivate API"
+    },
+    {
+      "id": "zenuml",
+      "name": "ZenUML",
+      "purpose": "Sequence diagrams written like code: participants, async and sync messages, nested calls with { } bodies, fragments (if/else, loops, opt, par, try/catch).",
+      "docs": "https://mermaid.js.org/syntax/zenuml.html",
+      "headers": [
+        "zenuml"
+      ],
+      "syntax": [
+        "zenuml  - header; the body is ZenUML, not sequenceDiagram syntax",
+        "title Text  - diagram title",
+        "Alice  - declares a participant (optional: participants appear in order of first use); one name per line",
+        "@Actor Alice  - participant with an annotator: @Actor @Boundary @Control @Database @Entity @EC2 @Lambda @AzureFunction @S3 @SQS @SNS",
+        "A as Alice  - alias: A in messages, Alice as the label",
+        "<<Interface>> Repo  /  Repo #FF0000  - stereotype; color",
+        "@Starter(Alice)  - the participant the first message comes from; write it below the declarations (above one with an annotator or alias, ZenUML draws little or nothing)",
+        "// text  - comment; one on the line before a message or fragment is drawn above it (Markdown allowed), others are ignored"
+      ],
+      "relations": [
+        "Alice->Bob: text  - async message",
+        "Bob-->Alice: text  - async reply (dashed)",
+        "Bob.method()  /  Bob.method(a, b)  - sync message (from the current participant)",
+        "Alice->Bob.method()  - sync message from a named caller",
+        "Bob.method() { ... }  - sync message whose body runs inside Bob (nested messages)",
+        "new A1  /  new A2(a, b)  - creation message",
+        "x = Bob.method()  /  Type x = Bob.method()  - sync message with its reply",
+        "return x  - reply from the current method; @return (or @reply) on the line before an async message makes it a reply"
+      ],
+      "blocks": [
+        "Every block is { ... }, closed by } (there is no end)",
+        "if(cond) { } else if(cond) { } else { }  - alt",
+        "while(cond) { }  /  for(x) { }  /  forEach(x) { }  /  loop(x) { }  - loop",
+        "opt { }  /  par { }  /  critical(text) { }  /  section(text) { }  /  ref(text)  /  group { }",
+        "try { } catch { } finally { }  - break"
+      ],
+      "notes": [
+        "ZenUML is a separate Mermaid plugin (@mermaid-js/mermaid-zenuml 1.0.1), registered by this editor; a page without it cannot draw zenuml.",
+        "Its parser takes any text without an error: a mistake draws wrong instead of failing, so check the drawing.",
+        "Do not mix in sequenceDiagram syntax: no participant/actor keywords, no ->> or -x arrows, no alt/loop/end, no Note; use the forms above.",
+        "Comments are //, not %% (%% lines are dropped by Mermaid before ZenUML reads the source)."
+      ],
+      "example": "zenuml\n    title Order\n    @Actor Customer\n    @Database DB\n    Customer->Shop: Place order\n    Shop.checkout(cart) {\n        stock = DB.reserve(cart)\n        if(stock) {\n            return confirmed\n        } else {\n            @return\n            Shop->Customer: Out of stock\n        }\n    }"
+    },
+    {
+      "id": "class",
+      "name": "Class",
+      "purpose": "UML class diagrams: classes with members, interfaces, relationships, cardinality and namespaces.",
+      "docs": "https://mermaid.js.org/syntax/classDiagram.html",
+      "headers": [
+        "classDiagram",
+        "classDiagram-v2"
+      ],
+      "syntax": [
+        "class Name  |  class Name[\"Display label\"]  |  class `Odd-Name`",
+        "class Name { +Type field  +method(arg) Ret }  (members one per line; body may also be on one line)",
+        "Name : +Type field  |  Name : +method(arg) Ret  (one member per line, outside a body)",
+        "members: visibility + - # ~ ; method = has (); return type after a space; suffix $ static, * abstract",
+        "generics with tildes: class Box~T~ , List~int~ items , List~List~int~~ (no commas inside)",
+        "A <|-- B  |  A --> B : label  |  A \"1\" --> \"*\" B : label (quoted cardinality before/after the arrow)",
+        "annotation: class Shape <<interface>>  |  <<interface>> Shape  |  first line inside the { } body",
+        "note \"text\"  |  note for ClassName \"text\"",
+        "direction TB|BT|LR|RL",
+        "classDef hot fill:#f96,stroke:#333  |  class Name:::hot  |  cssClass \"A,B\" hot  |  style Name fill:#f9f",
+        "click Name href \"url\" \"tooltip\"  |  link Name \"url\" _blank  |  callback Name \"fn\""
+      ],
+      "relations": [
+        "<|--  inheritance (solid, hollow triangle)",
+        "*--  composition (filled diamond)",
+        "o--  aggregation (hollow diamond)",
+        "-->  association (solid, arrow)",
+        "--  link (solid, no head)",
+        "..>  dependency (dashed, arrow)",
+        "..|>  realization (dashed, hollow triangle)",
+        "..  link (dashed, no head)",
+        "()--  or  --()  lollipop interface",
+        "heads may sit on both ends: A <|--|> B , C *--o D"
+      ],
+      "blocks": [
+        "class Name { ... } member body",
+        "namespace Pkg { class A ... }  |  namespace Pkg[\"Label\"] { }  |  nested namespace blocks  |  dotted namespace A.B { }"
+      ],
+      "notes": [
+        "Header is case-sensitive: classDiagram (classdiagram is not detected). classDiagram and classDiagram-v2 render identically in 12.x.",
+        "Inside a namespace only class declarations, notes and nested namespaces are allowed; write relations outside the namespace block.",
+        "A:::style cannot be combined with a relation on the same line (A:::hot --> B fails); style in a separate class line.",
+        "Relation labels after ':' cannot contain another ':' or ';'.",
+        "Generic type parts are not part of the class name: reference class Box~T~ as Box.",
+        "Unquoted class names allow letters, digits, _ , - , . and unicode; use backticks or a [\"label\"] for spaces or symbols.",
+        "Default look in 12.x: neo look, redux-color theme, ELK layout (config can switch back)."
+      ],
+      "example": "classDiagram\n    direction LR\n    namespace Shop {\n        class Order {\n            +String id\n            +List~Item~ items\n            +total() Money\n            +create(id)$ Order\n        }\n        class Item[\"Line Item\"]\n    }\n    class Payable {\n        <<interface>>\n        +pay(amount) bool\n    }\n    Customer \"1\" --> \"*\" Order : places\n    Order \"1\" *-- \"1..*\" Item : contains\n    Order ..|> Payable\n    Account <|-- Customer\n    Customer : +String name\n    note for Order \"Immutable after checkout\"\n    classDef hot fill:#f96\n    class Customer:::hot"
+    },
+    {
+      "id": "state",
+      "name": "State",
+      "purpose": "State machines: states, transitions, start/end, composite and concurrent states, choice/fork/join.",
+      "docs": "https://mermaid.js.org/syntax/stateDiagram.html",
+      "headers": [
+        "stateDiagram-v2",
+        "stateDiagram"
+      ],
+      "syntax": [
+        "StateId  |  StateId : description  |  state \"Description with spaces\" as StateId",
+        "A --> B  |  A --> B : event label",
+        "[*] --> First  |  Last --> [*]  (start/end; scoped to the enclosing composite)",
+        "state Composite { [*] --> a ... }  |  state \"Label\" as C { ... }",
+        "state c <<choice>>  |  state f <<fork>>  |  state j <<join>>  ([[choice]] [[fork]] [[join]] also accepted)",
+        "-- alone on a line inside a composite separates concurrent regions",
+        "note right of S : one line  |  note left of S ... end note (multi-line)",
+        "direction TB|BT|LR|RL (also inside a composite)",
+        "classDef bad fill:#f66  |  class A,B bad  |  A:::bad --> B  |  style A fill:#f00",
+        "click A \"url\" \"tooltip\"  |  click A href \"url\"",
+        "hide empty description  |  scale 300 width",
+        "; may separate statements on one line"
+      ],
+      "relations": [
+        "-->  transition (the only arrow; no ->, ..>, or labels on both ends)"
+      ],
+      "blocks": [
+        "state Id { ... } composite state, nestable",
+        "note left of|right of Id ... end note"
+      ],
+      "notes": [
+        "Detection is case-sensitive: stateDiagram / stateDiagram-v2 must be spelled exactly; both use the same v2 renderer in 12.x. Keywords after the header are case-insensitive.",
+        "State ids cannot contain spaces, '-', ':' or '{'; use state \"Long name\" as id. Composite state names must be one word.",
+        "Reserved as bare ids: default, click, href, note, state, class, classDef, style.",
+        "A '#' at the start of a token begins a comment; inside labels after ':' it is text. Labels cannot contain ';' or '::'.",
+        "'--' (concurrency) is only valid inside a composite { }; at top level it is a parse error.",
+        "Floating notes (note \"text\" as N) parse but are not drawn; attach notes with left of / right of.",
+        "Transitions between states nested in different composites parse but are not supported by the layout.",
+        "classDef styles cannot be applied to [*] start/end states or to composite states."
+      ],
+      "example": "stateDiagram-v2\n    direction LR\n    [*] --> Idle\n    Idle --> Running : start\n    state \"Running job\" as Running {\n        [*] --> Fetch\n        Fetch --> Build\n        Build --> [*]\n    }\n    state check <<choice>>\n    Running --> check\n    check --> Done : ok\n    check --> Failed : error\n    Failed : Retry allowed\n    note right of Failed\n        Retried up to 3 times\n    end note\n    Done --> [*]\n    classDef bad fill:#f66\n    class Failed bad"
+    },
+    {
+      "id": "er",
+      "name": "Entity relationship",
+      "purpose": "Entity-relationship (data) models: entities with typed attributes and keys, and cardinality-labelled relationships.",
+      "docs": "https://mermaid.js.org/syntax/entityRelationshipDiagram.html",
+      "headers": [
+        "erDiagram"
+      ],
+      "syntax": [
+        "ENTITY  (entity alone)  |  \"Name with spaces\"",
+        "A <card><line><card> B : label  e.g. CUSTOMER ||--o{ ORDER : places",
+        "label is mandatory on a relation: one word or \"quoted text\" (use \"\" for none)",
+        "ENTITY { type name  |  type name PK  |  type name PK, FK \"comment\" }  one attribute per line",
+        "attribute type may end in ? (string? middleName); types/names allow - _ ( ) [ ] . and ~generic~; name may start with *",
+        "alias: p[Person] { ... }  |  a[\"Customer Account\"]",
+        "subgraph id ... end  |  subgraph id [Title words] ... end  |  subgraph \"Quoted id\" ... end",
+        "direction TB|BT|LR|RL (top level and inside subgraph)",
+        "classDef hot fill:#f96  |  class A,B hot  |  A:::hot  |  style A fill:#f00,stroke:#333",
+        "word cardinalities: one or zero, zero or one, one or more, one or many, zero or more, zero or many, only one, many(0), many(1), 1, 1+, 0+",
+        "word lines: to (identifying), optionally to (non-identifying), e.g. A only one to zero or more B : has"
+      ],
+      "relations": [
+        "|o / o|  zero or one (left / right side)",
+        "|| / ||  exactly one",
+        "}o / o{  zero or more",
+        "}| / |{  one or more",
+        "--  identifying (solid line)",
+        "..  or  .-  or  -.  non-identifying (dashed line)"
+      ],
+      "blocks": [
+        "ENTITY { attributes }",
+        "subgraph id [Title] ... end (nestable; can be a relation endpoint by id)"
+      ],
+      "notes": [
+        "Header is exactly erDiagram (case-sensitive detection); keywords inside are case-insensitive.",
+        "A relation without ': label' is a parse error; multi-word labels must be quoted.",
+        "Whole-word reserved names fail as entities: one, many, to, end, class, style, classDef, subgraph (prefix use like endpoint is fine).",
+        "Keys are only PK, FK, UK (comma-separated); comments are double-quoted and cannot contain '\"'.",
+        "Entity names allow unicode, letters, digits, _ - * . ; quote names with spaces and refer to them with the same quotes.",
+        "Subgraphs (v11.17+) and optional ? types (v11.16+) are newer than many examples online.",
+        "Default look in 12.x: neo look, redux-color theme, ELK layout."
+      ],
+      "example": "erDiagram\n    direction LR\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    PRODUCT ||--o{ LINE-ITEM : \"ordered in\"\n    CUSTOMER }|..|{ ADDRESS : \"ships to\"\n    CUSTOMER {\n        string id PK\n        string name\n        string? phone \"optional\"\n    }\n    ORDER {\n        int id PK\n        string customerId FK\n        date placedAt\n    }\n    subgraph catalog [Product Catalog]\n        PRODUCT\n    end"
+    },
+    {
+      "id": "requirement",
+      "name": "Requirement",
+      "purpose": "SysML-style requirement diagrams: requirements, the elements that satisfy or verify them, and typed relationships.",
+      "docs": "https://mermaid.js.org/syntax/requirementDiagram.html",
+      "headers": [
+        "requirementDiagram"
+      ],
+      "syntax": [
+        "<reqType> name {  (newline required after '{')",
+        "    id: 1   text: \"...\"   risk: low|medium|high   verifymethod: analysis|inspection|test|demonstration  (one per line, all optional)",
+        "}  (closing brace on its own line)",
+        "reqType: requirement | functionalRequirement | interfaceRequirement | performanceRequirement | physicalRequirement | designConstraint",
+        "element name { type: \"...\"  docRef: \"...\" }  (same multi-line block rules)",
+        "src - <relType> -> dst  e.g. sensor - satisfies -> req1",
+        "dst <- <relType> - src  e.g. req1 <- verifies - test1",
+        "direction TB|BT|LR|RL",
+        "classDef crit fill:#f96  |  class a,b crit  |  a:::crit  |  requirement r:::crit {  |  style r fill:#f00"
+      ],
+      "relations": [
+        "contains, copies, derives, satisfies, verifies, refines, traces (used as - type -> or <- type -)"
+      ],
+      "blocks": [
+        "requirement-type name { field lines }",
+        "element name { type / docRef lines }"
+      ],
+      "notes": [
+        "Header must be requirementDiagram followed by a newline; the detector also matches a bare 'requirement' header but the parser rejects it.",
+        "Single-line blocks like requirement r { id: 1 } fail: '{' must end the line and each field needs its own line.",
+        "All keywords are case-insensitive (verifyMethod = verifymethod, High = high).",
+        "Unquoted names/values stop at - < > = : , { and fail if they start with a keyword (test, high, element, text, id, type...); quote them: \"my-req\", \"test the login\".",
+        "Quoted names are referenced with the same quotes in relations.",
+        "An inline 'title ...' line is a parse error; put the title in front matter.",
+        "'#' at the start of a token begins a comment."
+      ],
+      "example": "requirementDiagram\n    direction LR\n    requirement login_req {\n        id: 1\n        text: \"Users can log in with SSO\"\n        risk: high\n        verifymethod: test\n    }\n    functionalRequirement lockout_req {\n        id: \"1.1\"\n        text: \"Lock the account after 5 failures\"\n        risk: medium\n        verifymethod: inspection\n    }\n    element auth_service {\n        type: \"service\"\n        docRef: \"docs/auth.md\"\n    }\n    lockout_req - derives -> login_req\n    auth_service - satisfies -> login_req\n    classDef critical fill:#f96\n    class login_req critical"
+    },
+    {
+      "id": "c4",
+      "name": "C4",
+      "purpose": "C4-model architecture views (context, container, component, dynamic, deployment) in C4-PlantUML-style macros.",
+      "docs": "https://mermaid.js.org/syntax/c4.html",
+      "headers": [
+        "C4Context",
+        "C4Container",
+        "C4Component",
+        "C4Dynamic",
+        "C4Deployment"
+      ],
+      "syntax": [
+        "Person(alias, \"Label\", \"Description\")  |  Person_Ext(...)",
+        "System(alias, \"Label\", \"Descr\")  plus SystemDb, SystemQueue, System_Ext, SystemDb_Ext, SystemQueue_Ext",
+        "Container(alias, \"Label\", \"Technology\", \"Descr\")  plus ContainerDb, ContainerQueue and *_Ext variants",
+        "Component(alias, \"Label\", \"Technology\", \"Descr\")  plus ComponentDb, ComponentQueue and *_Ext variants",
+        "Boundary(alias, \"Label\", \"type\") { ... }  |  Enterprise_Boundary | System_Boundary | Container_Boundary (alias, \"Label\") { ... }",
+        "Deployment_Node(alias, \"Label\", \"type\", \"descr\") { ... }  |  Node(...) | Node_L(...) | Node_R(...)",
+        "Rel(from, to, \"label\", \"technology\")  |  BiRel | Rel_U/Rel_Up | Rel_D/Rel_Down | Rel_L/Rel_Left | Rel_R/Rel_Right | Rel_Back",
+        "RelIndex(1, from, to, \"label\")  (C4Dynamic; index ignored, order of statements numbers the steps)",
+        "named args with $: $descr=\"...\", $link=\"...\", $tags=\"...\"; empty positional arg: Container(c, \"C\", , \"descr\")",
+        "UpdateElementStyle(alias, $bgColor=\"grey\", $fontColor=\"red\", $borderColor=\"red\")",
+        "UpdateRelStyle(from, to, $textColor=\"red\", $lineColor=\"blue\", $offsetX=\"-40\", $offsetY=\"60\")",
+        "UpdateLayoutConfig($c4ShapeInRow=\"3\", $c4BoundaryInRow=\"1\")",
+        "title Text on its own line"
+      ],
+      "relations": [
+        "Rel = one-way arrow; BiRel = two-way; Rel_U/D/L/R and Rel_Back hint direction",
+        "relations reference element/boundary aliases, never labels"
+      ],
+      "blocks": [
+        "Boundary-type macro (...) { ... } nestable; '{' on the same line or the next line",
+        "Deployment_Node / Node / Node_L / Node_R (...) { ... } nestable"
+      ],
+      "notes": [
+        "Experimental diagram. Macro names and headers are case-sensitive (person(...) or c4context fail); the header must be alone on its first line.",
+        "Detector quirk: only C4Context is anchored to the start; the words C4Container, C4Component, C4Dynamic, C4Deployment anywhere in another diagram's text make Mermaid treat it as C4 and fail. Avoid those words in other diagram types.",
+        "Not supported: Lay_U/D/L/R, AddElementTag, AddRelTag, RoundedBoxShape and other shape/line helpers, sprites, tags rendering, legend; they cause lexical errors or are ignored.",
+        "Unquoted arguments end at ','; quote any text with commas. Quoted text cannot contain '\"'.",
+        "Layout is not automatic: shapes flow in statement order, c4ShapeInRow (default 4) and c4BoundaryInRow (default 2) per row.",
+        "One statement per line; %% comments work, # is not a comment.",
+        "Text wraps by default since v11.17.1 (disable with c4.wrap: false)."
+      ],
+      "example": "C4Container\n    title Container view of the shop\n    Person(customer, \"Customer\", \"Buys products\")\n    System_Ext(pay, \"Payment Provider\", \"Card processing\")\n    Container_Boundary(shop, \"Shop\") {\n        Container(web, \"Web App\", \"React\", \"Storefront UI\")\n        Container(api, \"API\", \"Go\", \"Business logic\")\n        ContainerDb(db, \"Database\", \"PostgreSQL\", \"Orders and products\")\n    }\n    Rel(customer, web, \"Uses\", \"HTTPS\")\n    Rel(web, api, \"Calls\", \"JSON/HTTPS\")\n    Rel(api, db, \"Reads and writes\", \"SQL\")\n    Rel(api, pay, \"Charges cards\", \"HTTPS\")\n    UpdateRelStyle(api, pay, $lineColor=\"red\", $offsetY=\"-10\")\n    UpdateLayoutConfig($c4ShapeInRow=\"3\", $c4BoundaryInRow=\"1\")"
+    },
+    {
+      "id": "gantt",
+      "name": "Gantt",
+      "purpose": "Project schedule: tasks as bars on a time axis, grouped into sections, with dependencies and milestones.",
+      "docs": "https://mermaid.js.org/syntax/gantt.html",
+      "headers": [
+        "gantt"
+      ],
+      "syntax": [
+        "dateFormat <dayjs format>  (input date format, default YYYY-MM-DD; e.g. dateFormat YYYY-MM-DD HH:mm)",
+        "axisFormat <d3 time format>  (axis labels, e.g. axisFormat %b %d)",
+        "tickInterval <n><millisecond|second|minute|hour|day|week|month>  (e.g. tickInterval 1week)",
+        "title <text>  /  section <name>",
+        "excludes <weekends|weekday names|YYYY-MM-DD ...>  (repeatable; e.g. excludes weekends 2024-12-25); includes <dates> overrides excludes",
+        "weekend friday|saturday  (which days 'weekends' means; default saturday+sunday)",
+        "weekday monday..sunday  (week start for week-based tickInterval)",
+        "inclusiveEndDates / topAxis  (flags on their own line)",
+        "todayMarker off  |  todayMarker stroke-width:5px,stroke:#0f0",
+        "<task name> : [tags,] [id,] [start,] end  (e.g. Build : crit, b1, 2024-01-02, 3d)",
+        "start = date in dateFormat | after <id> [<id> ...]  (latest end of the listed tasks)",
+        "end = date | duration | until <id>  (until = start of that task)",
+        "duration = number + ms|s|m|h|d|w|M|y, decimals allowed (1.5d); M is months, m is minutes",
+        "tags (must come first, lowercase): active, done, crit, milestone, vert",
+        "click <id> href \"<url>\"  |  click <id> call fn(args)"
+      ],
+      "notes": [
+        "Detector is /^\\s*gantt/ (case-sensitive): Gantt or GANTT is not detected. The rest of the lexer is case-insensitive.",
+        "Metadata after ':' is split on ','. 1 item = end (start = previous task end), 2 = start,end, 3 = id,start,end. An id only exists in the 3-item form, so 'Task : t1, 3d' does not set id t1.",
+        "Task names cannot contain ':'. Task metadata cannot contain '#' or ';' (';' is a parse error).",
+        "A task line whose name starts with a keyword plus space (title, section, excludes, includes, dateFormat, axisFormat, click, ...) is silently taken as that statement; e.g. 'Title page : 1d' becomes the chart title.",
+        "Unknown ids in after/until and invalid durations only log a warning: the task falls back to today or zero length, so typos render wrong rather than fail.",
+        "Milestones need an id and a duration to be referenceable: Release : milestone, m1, 2024-02-01, 0d.",
+        "vert draws a full-height vertical marker and takes no row; the docs' tag list omits it, but ganttDb accepts it.",
+        "displayMode: compact (several tasks per row) is config only (frontmatter gantt.displayMode), not a statement."
+      ],
+      "example": "gantt\n    title Release plan\n    dateFormat YYYY-MM-DD\n    axisFormat %b %d\n    excludes weekends\n    section Build\n    Design      : done, des, 2024-01-02, 3d\n    Implement   : active, impl, after des, 5d\n    section Ship\n    Test        : crit, test, after impl, 2d\n    Release     : milestone, rel, after test, 0d\n    Code freeze : vert, cf, 2024-01-12, 0d"
+    },
+    {
+      "id": "pie",
+      "name": "Pie",
+      "purpose": "Proportions of a whole: one slice per labeled numeric value.",
+      "docs": "https://mermaid.js.org/syntax/pie.html",
+      "headers": [
+        "pie"
+      ],
+      "syntax": [
+        "pie [showData] [title <text>]  (e.g. pie showData title Pets; showData appends values to legend)",
+        "title <text>  (alternatively on its own line after pie)",
+        "\"<label>\" : <number>  (e.g. \"Dogs\" : 386; one slice per line)",
+        "label: double- or single-quoted string, required",
+        "number: integer or decimal with digits on both sides of '.' (42, 42.5)"
+      ],
+      "notes": [
+        "Detector is /^\\s*pie/ and keywords are case-sensitive: Pie is not detected, showdata is not accepted.",
+        "Labels must be quoted; Dogs : 5 is a lexer error.",
+        "Negative values throw an error. 0 is accepted (the docs say values must be > 0), but slices under 1% are not drawn.",
+        ".5, 5., 1e3, 1,000 and leading-zero integers like 05 are not valid numbers.",
+        "Duplicate labels: only the first one is kept.",
+        "Slices are drawn in source order. donutHole, legendPosition, highlightSlice and textPosition are config (pie.*), not statements."
+      ],
+      "example": "pie showData\n    title Key elements in Product X\n    \"Calcium\" : 42.96\n    \"Potassium\" : 50.05\n    \"Magnesium\" : 10.01\n    \"Iron\" : 5"
+    },
+    {
+      "id": "journey",
+      "name": "User journey",
+      "purpose": "Steps a user takes to complete a goal, grouped in sections, each scored for satisfaction and tagged with actors.",
+      "docs": "https://mermaid.js.org/syntax/userJourney.html",
+      "headers": [
+        "journey"
+      ],
+      "syntax": [
+        "title <text>",
+        "section <name>  (starts a group; tasks follow until the next section)",
+        "<task name>: <score>: <actor>[, <actor> ...]  (e.g. Make tea: 5: Me, Cat)",
+        "<task name>: <score>  (actors are optional)",
+        "score: number, intended range 1 (bad) to 5 (good)"
+      ],
+      "notes": [
+        "Detector is /^\\s*journey/ (case-sensitive); the rest of the lexer is case-insensitive.",
+        "'#' starts a comment anywhere a token starts: text after '#' in a task, section or title is dropped.",
+        "';' in task names, section names or titles is a parse error. Task and section names cannot contain ':'.",
+        "A task whose name starts with 'section ' or 'title ' (any case) is read as that keyword and usually fails to parse.",
+        "The score is not validated: non-numbers become NaN, and values outside 1-5 render off the scale.",
+        "Indentation is free-form and has no meaning."
+      ],
+      "example": "journey\n    title My working day\n    section Go to work\n      Make tea: 5: Me\n      Go upstairs: 3: Me\n      Do work: 1: Me, Cat\n    section Go home\n      Go downstairs: 5: Me\n      Sit down: 5: Me"
+    },
+    {
+      "id": "timeline",
+      "name": "Timeline",
+      "purpose": "Chronology: time periods in order, each with one or more events, optionally grouped into sections.",
+      "docs": "https://mermaid.js.org/syntax/timeline.html",
+      "headers": [
+        "timeline",
+        "timeline LR",
+        "timeline TD"
+      ],
+      "syntax": [
+        "timeline [LR|TD]  (direction; LR is the default, TD is v11.14+)",
+        "title <text>",
+        "section <name>  (groups the following periods; all share a color)",
+        "<period> : <event>  (e.g. 2004 : Facebook)",
+        "<period> : <event> : <event>  (several events on one line)",
+        ": <event>  (continuation line: adds another event to the previous period)",
+        "<period>  (a period line with no events is allowed)",
+        "<br> inside text forces a line break"
+      ],
+      "notes": [
+        "Detector is /^\\s*timeline/ (case-sensitive); the rest of the lexer is case-insensitive.",
+        "An event starts at ':' followed by whitespace. Inside an event ':' is fine only if not followed by whitespace (Meet at 10:30 works).",
+        "Periods and section names cannot contain ':' at all: '10:30 : Standup' is a parse error. Quotes do not help; reword the period.",
+        "'#' at the start of a period begins a comment, and a period stops at '#'.",
+        "Only LR and TD are directions. 'timeline TB' parses but TB becomes a period named TB.",
+        "Period and event text is plain; no quoting syntax, no markdown strings."
+      ],
+      "example": "timeline\n    title History of social media\n    section 2002 - 2004\n        2002 : LinkedIn\n        2004 : Facebook : Google\n    section 2005 - 2006\n        2005 : YouTube\n        2006 : Twitter\n             : Meeting at 10:30"
+    },
+    {
+      "id": "mindmap",
+      "name": "Mindmap",
+      "purpose": "Hierarchical idea map radiating from a single root, with the tree defined by indentation.",
+      "docs": "https://mermaid.js.org/syntax/mindmap.html",
+      "headers": [
+        "mindmap"
+      ],
+      "syntax": [
+        "<text>  (default shape; the text is also the id)",
+        "id[text]  (square)",
+        "id(text)  (rounded square)",
+        "id((text))  (circle)",
+        "id))text((  (bang)",
+        "id)text(  (cloud)",
+        "id{{text}}  (hexagon)",
+        "id[\"text with (parens) or [brackets]\"]  (quoted text inside any shape)",
+        "id[\"`**bold** *italic* and a real newline`\"]  (markdown string)",
+        "::icon(fa fa-book)  (own line after a node: icon for that node)",
+        ":::cls1 cls2  (own line after a node: CSS classes for that node)"
+      ],
+      "blocks": [
+        "Parent/child is defined only by indentation: a line indented deeper than the previous node is its child.",
+        "Exactly one root: the first node. Another node at or above the root's indentation throws 'There can be only one root'.",
+        "Uneven indentation: the parent is the nearest previous node with smaller indentation.",
+        "::icon() and ::: lines decorate the node just above them, regardless of their own indentation."
+      ],
+      "notes": [
+        "Detector is /^\\s*mindmap/ (case-sensitive).",
+        "Unquoted text containing ( ) [ ] { } is read as a shape: 'Foo (bar)' silently becomes id 'Foo ' with rounded text 'bar'. Quote it: a[\"Foo (bar)\"].",
+        "No title, accTitle or accDescr statements: such lines just become nodes.",
+        "No edges or arrows; children are the only relation.",
+        "Icons need the icon font to be loaded by the host page; classes need CSS supplied by the host.",
+        "Use <br/> for line breaks in plain text; markdown strings wrap automatically."
+      ],
+      "example": "mindmap\n    root((mindmap))\n        Origins\n            Long history\n            ::icon(fa fa-book)\n            Popularisation\n        Research\n            id1[On effectiveness]\n            id2(\"Automatic creation (tools)\")\n        Tools\n            Pen and paper\n            Mermaid"
+    },
+    {
+      "id": "kanban",
+      "name": "Kanban",
+      "purpose": "Board of columns (workflow stages) holding task cards, with optional ticket, assignee and priority metadata.",
+      "docs": "https://mermaid.js.org/syntax/kanban.html",
+      "headers": [
+        "kanban"
+      ],
+      "syntax": [
+        "colId[Column title]  (a column: node at the shallowest indentation)",
+        "    itemId[Item text]  (an item: any node indented under a column)",
+        "[Text] or Text  (id is optional; a node without id gets a generated one)",
+        "itemId[\"Text with (parens)\"]  (quote text containing brackets or parentheses)",
+        "itemId[Text]@{ ticket: MC-2037, assigned: 'knsv', priority: 'High' }  (metadata, same line, YAML-like)",
+        "metadata keys: assigned, ticket, priority, label, icon",
+        "priority values: 'Very High', 'High', 'Low', 'Very Low'"
+      ],
+      "blocks": [
+        "Columns are the nodes at the indentation of the first node; every deeper node is an item of the most recent column.",
+        "There is only one level of items: deeper indentation does not nest items inside items.",
+        "A node less indented than the first column throws 'Items without section detected'."
+      ],
+      "notes": [
+        "Detector is /^\\s*kanban/ (case-sensitive).",
+        "Unquoted text containing ( ) [ ] { } breaks parsing or becomes a shape; quote it: id[\"Fix (bug)\"].",
+        "@{ ... } is parsed as YAML: quote values with spaces, commas or colons (priority: 'Very High').",
+        "Ticket links come from config kanban.ticketBaseUrl, with #TICKET# replaced by the ticket value.",
+        "Keep ids unique across the board (the docs' full example reuses id3).",
+        "No title, accTitle or accDescr statements; no edges."
+      ],
+      "example": "kanban\n    todo[Todo]\n        docs[Write documentation]\n        id1[\"Fix login (Safari)\"]@{ ticket: MC-2037, priority: 'High' }\n    doing[In progress]\n        id2[Design grammar]@{ assigned: 'knsv' }\n    done[Done]\n        id3[Define getData]@{ priority: 'Very Low' }"
+    },
+    {
+      "id": "gitGraph",
+      "name": "Git graph",
+      "purpose": "Git history: commits on branches, with branching, checkouts, merges and cherry-picks.",
+      "docs": "https://mermaid.js.org/syntax/gitgraph.html",
+      "headers": [
+        "gitGraph",
+        "gitGraph:",
+        "gitGraph LR:",
+        "gitGraph TB:",
+        "gitGraph BT:"
+      ],
+      "syntax": [
+        "commit [id: \"x\"] [msg: \"text\" | \"text\"] [tag: \"v1\"] [type: NORMAL|REVERSE|HIGHLIGHT]  (attributes in any order)",
+        "branch <name> [order: <int>]  (creates the branch AND checks it out)",
+        "checkout <name>  |  switch <name>",
+        "merge <name> [id: \"x\"] [tag: \"v1\"] [type: ...]  (merges <name> into the current branch)",
+        "cherry-pick id: \"x\" [parent: \"y\"] [tag: \"t\"]",
+        "branch names: letters, digits, _ - . / (e.g. feature/login-v2), or a quoted string",
+        "starts on branch main (config gitGraph.mainBranchName changes it)"
+      ],
+      "notes": [
+        "Header is case-sensitive: gitgraph is not detected. A direction must be followed by a colon: 'gitGraph LR' is a parse error, use 'gitGraph LR:'.",
+        "id, msg, tag and parent values must be double- or single-quoted strings; id: abc is a parse error.",
+        "Attribute keywords are written with the colon attached: id: \"a\" or id:\"a\" work, id : \"a\" does not.",
+        "type values are uppercase only (HIGHLIGHT, not highlight).",
+        "merge has no msg attribute. Merging fails if the branch does not exist, has no commits, is the current branch, or has the same head as the current branch.",
+        "checkout of a branch never created is an error; branch with an existing name is an error.",
+        "cherry-pick needs an existing commit id from another branch, the current branch needs a commit, and a merge commit also needs parent: set to one of its parents.",
+        "Branch names that collide with keywords (commit, merge, ...) must be quoted."
+      ],
+      "example": "gitGraph\n    commit id: \"init\"\n    branch develop\n    commit id: \"feat-a\"\n    commit id: \"feat-b\" tag: \"v0.1\"\n    checkout main\n    commit id: \"hotfix\" type: HIGHLIGHT\n    merge develop id: \"merge-dev\"\n    branch release\n    cherry-pick id: \"feat-a\"\n    commit msg: \"prepare release\""
+    },
+    {
+      "id": "quadrant",
+      "name": "Quadrant chart",
+      "purpose": "2x2 matrix: points placed by two 0-1 scores on labeled axes, with a label per quadrant.",
+      "docs": "https://mermaid.js.org/syntax/quadrantChart.html",
+      "headers": [
+        "quadrantChart"
+      ],
+      "syntax": [
+        "title <text>",
+        "x-axis <left text> [--> <right text>]  (e.g. x-axis Low Reach --> High Reach)",
+        "y-axis <bottom text> [--> <top text>]",
+        "quadrant-1 <text>  (top right); quadrant-2 top left; quadrant-3 bottom left; quadrant-4 bottom right",
+        "<point name>: [x, y]  (e.g. Campaign A: [0.3, 0.6])",
+        "<point name>: [x, y] radius: 12, color: #ff3300, stroke-color: #10f0f0, stroke-width: 5px  (inline style)",
+        "<point name>:::<class>: [x, y]  (e.g. Point A:::hot: [0.9, 0.1])",
+        "classDef <class> color: #109060, radius: 10, stroke-color: #310085, stroke-width: 10px",
+        "\"quoted text\" or \"`markdown`\" for any label containing other punctuation"
+      ],
+      "notes": [
+        "Detector is /^\\s*quadrantChart/ (case-sensitive, camel case).",
+        "Coordinates must match 1 | 0 | 0.<digits>: 0.5, 0.0 and 1 work; 1.0, .5 and values > 1 are lexer errors.",
+        "Unquoted labels allow letters, digits, spaces and - _ . , & + = * # / ! ? etc. but not ( ) [ ] or ':'; quote such labels: \"Item (x)\": [0.5, 0.5].",
+        "A line starting with title (any case), even inside a point name, is taken as the title: 'Title page: [0.5, 0.5]' silently becomes a title.",
+        "x-axis/y-axis with only the first text and a trailing --> gets an arrow appended to that text.",
+        "';' can end a statement like a newline."
+      ],
+      "example": "quadrantChart\n    title Reach and engagement of campaigns\n    x-axis Low Reach --> High Reach\n    y-axis Low Engagement --> High Engagement\n    quadrant-1 We should expand\n    quadrant-2 Need to promote\n    quadrant-3 Re-evaluate\n    quadrant-4 May be improved\n    Campaign A: [0.3, 0.6]\n    Campaign B: [0.45, 0.23] radius: 10, color: #ff3300\n    Campaign C:::hot: [0.78, 0.9]\n    \"Campaign D (pilot)\": [0.1, 0]\n    classDef hot color: #d62728, radius: 12"
+    },
+    {
+      "id": "xychart",
+      "name": "XY chart",
+      "purpose": "Bar and line charts over a categorical or numeric x-axis and a numeric y-axis.",
+      "docs": "https://mermaid.js.org/syntax/xyChart.html",
+      "headers": [
+        "xychart",
+        "xychart-beta",
+        "xychart horizontal",
+        "xychart vertical"
+      ],
+      "syntax": [
+        "xychart [horizontal|vertical]  (orientation; vertical is the default)",
+        "title \"Chart title\"",
+        "x-axis [\"title\"] [cat1, \"cat 2\", cat3]  (categorical)",
+        "x-axis [\"title\"] <min> --> <max>  (numeric range)",
+        "y-axis [\"title\"] [<min> --> <max>]  (numeric only; range auto-computed if omitted)",
+        "bar [\"series name\"] [n1, n2, ...]  (e.g. bar \"Revenue\" [5000, 6000, 7500])",
+        "line [\"series name\"] [n1, n2, ...]",
+        "numbers: optional sign, decimals, leading-dot allowed (+1.3, -3.4, .98)",
+        "per-point label (grammar only, undocumented): line [10 \"Start\", 20, 30 \"End\"]",
+        "named series appear in the legend (v11.17+); unnamed ones do not"
+      ],
+      "notes": [
+        "xychart and xychart-beta are both accepted (detector /^\\s*xychart(-beta)?/); prefer xychart. Detection is case-sensitive.",
+        "Quote every text with spaces: whitespace between unquoted words is dropped, so title Sales Revenue renders as SalesRevenue.",
+        "Unquoted words equal to keywords (line, bar, title, x-axis, y-axis, horizontal, vertical) are parse errors in labels; quote them.",
+        "Unquoted text allows only ASCII letters, digits and & + = * # . - _; anything else (non-ASCII such as CJK, parentheses, $, %, :, /) needs quotes.",
+        "Each series should have one value per x-axis category.",
+        "The y-axis cannot be categorical; there is no scatter, area or stacked type.",
+        "';' can end a statement like a newline."
+      ],
+      "example": "xychart\n    title \"Sales Revenue\"\n    x-axis \"Month\" [jan, feb, mar, apr, may, jun]\n    y-axis \"Revenue (in $)\" 4000 --> 11000\n    bar \"Actual\" [5000, 6000, 7500, 8200, 9500, 10500]\n    line \"Target\" [5500, 6500, 7000, 8000, 9000, 10000]"
+    },
+    {
+      "id": "sankey",
+      "name": "Sankey",
+      "purpose": "Show weighted flows between nodes (energy, money, traffic) as bands whose width is the flow value.",
+      "docs": "https://mermaid.js.org/syntax/sankey.html",
+      "headers": [
+        "sankey",
+        "sankey-beta"
+      ],
+      "syntax": [
+        "header alone on line 1, then CSV rows: sankey",
+        "source,target,value  e.g. Coal,Electricity grid,63.9",
+        "value is a number parsed with parseFloat, e.g. 35 or 0.597",
+        "field with a comma: wrap in double quotes  e.g. Gas,\"Heating, homes\",12",
+        "double quote inside a quoted field: double it  e.g. \"The \"\"big\"\" one\",Sink,5",
+        "a node is created implicitly by its first appearance as source or target",
+        "blank lines between rows are allowed and ignored"
+      ],
+      "relations": [
+        "each row is one directed link source -> target with width = value"
+      ],
+      "notes": [
+        "Exactly 3 columns per row; no header row (a 'source,target,value' line would become a link with NaN value).",
+        "Only single quotes are literal text; double quotes start a CSV-quoted field.",
+        "Grammar lexer accepts only printable ASCII (U+0020-U+007E) in fields, quoted or not; non-ASCII names (CJK, accents, emoji) fail to lex.",
+        "Leading/trailing spaces on each row are trimmed; spaces inside names are kept.",
+        "%% after data on a row is not a comment (it is field text); whole-line %% comments are removed by Mermaid before parsing.",
+        "Links must not form a cycle (d3-sankey cannot lay out circular links).",
+        "No styling, classes, or per-link colors in the source; use config sankey.linkColor / nodeAlignment / showValues."
+      ],
+      "example": "sankey\nSolar,Grid,60\nWind,Grid,290\nCoal,Grid,120\nGrid,Homes,210\nGrid,\"Industry, heavy\",180\nGrid,Losses,80"
+    },
+    {
+      "id": "packet",
+      "name": "Packet",
+      "purpose": "Draw the bit layout of a network packet or register as rows of labeled bit fields.",
+      "docs": "https://mermaid.js.org/syntax/packet.html",
+      "headers": [
+        "packet",
+        "packet-beta"
+      ],
+      "syntax": [
+        "start-end: \"label\"  e.g. 0-15: \"Source Port\"",
+        "start: \"label\"  single bit, e.g. 106: \"URG\"",
+        "+bits: \"label\"  width only, starts after previous field, e.g. +16: \"Length\"",
+        "forms can be mixed: +16: \"A\" then 16-31: \"B\"",
+        "title Text  e.g. title UDP Packet",
+        "label is a quoted string, double or single quotes: 8: 'flag'",
+        "trailing %% comment after a field is allowed"
+      ],
+      "notes": [
+        "Fields must be contiguous from bit 0 in ascending order: no gaps, no overlaps (error 'not contiguous').",
+        "Ranges are always low-high (0-7); 7-0 is an error. Draw MSB-left with config packet.bitOrder: descending.",
+        "+0 is an error (zero bit field); end must be >= start.",
+        "Unquoted labels are not allowed.",
+        "Fields wider than bitsPerRow (default 32) wrap across rows automatically.",
+        "Only integer bit numbers; no hex (0x10) or negative values."
+      ],
+      "example": "packet\ntitle UDP Packet\n+16: \"Source Port\"\n+16: \"Destination Port\"\n32-47: \"Length\"\n48-63: \"Checksum\"\n64-95: \"Data (variable length)\""
+    },
+    {
+      "id": "block",
+      "name": "Block",
+      "purpose": "Lay out blocks on an author-controlled column grid (system/component layouts) with optional edges.",
+      "docs": "https://mermaid.js.org/syntax/block.html",
+      "headers": [
+        "block",
+        "block-beta"
+      ],
+      "syntax": [
+        "columns N | columns auto  e.g. columns 3",
+        "id  plain block labeled with its id; several per line: a b c",
+        "id[\"label\"]  rectangle; label must be double-quoted",
+        "shapes: id(\"..\") round, id([\"..\"]) stadium, id[[\"..\"]] subroutine, id[(\"..\")] cylinder",
+        "shapes: id((\"..\")) circle, id(((\"..\"))) double circle, id>\"..\"] asymmetric, id{\"..\"} rhombus, id{{\"..\"}} hexagon",
+        "shapes: id[/\"..\"/] parallelogram, id[\\\"..\"\\] alt parallelogram, id[/\"..\"\\] trapezoid, id[\\\"..\"/] alt trapezoid",
+        "id:N  span N columns, e.g. b:2 or a[\"A\"]:2",
+        "space | space:N  empty cell(s), e.g. space:2",
+        "id<[\"label\"]>(dir)  block arrow; dir: right left up down x y, e.g. ar<[\"go\"]>(x, down)",
+        "classDef name css  e.g. classDef hot fill:#f96,stroke:#333",
+        "class id1,id2 name  e.g. class a,b hot",
+        "style id css  e.g. style a fill:#969,stroke-width:4px"
+      ],
+      "relations": [
+        "A --> B arrow; A --- B line; A ==> B thick; A -.-> B dotted",
+        "A --x B cross end; A --o B circle end; A <--> B both ends",
+        "A -- \"label\" --> B  labeled edge"
+      ],
+      "blocks": [
+        "block:id ... end  named composite block; block:id:N ... end spans N columns",
+        "block ... end  anonymous composite block",
+        "composites nest; each has its own 'columns' setting; indentation is cosmetic"
+      ],
+      "notes": [
+        "Shape labels must be double-quoted: a[Label] fails, write a[\"Label\"]. Single quotes are not strings.",
+        "Node ids cannot contain - ( ) [ ] { } < > : = or whitespace.",
+        "Reserved whole words (not usable as ids): block, end, space, columns, default, class, style, classDef, linkStyle, interpolate.",
+        "Every block / block:id needs a matching end.",
+        "Without 'columns', all children of a level are placed in one row (columns auto).",
+        "Layout is the grid order of declaration; there is no direction keyword (no TD/LR)."
+      ],
+      "example": "block\n    columns 3\n    a[\"Frontend\"] b:2\n    block:svc:3\n        columns 2\n        api(\"API\") db[(\"DB\")]\n    end\n    space\n    arr<[\"sync\"]>(down)\n    c{\"Check\"}\n    a --> api\n    api -- \"query\" --> db\n    classDef hot fill:#f96,stroke:#333\n    class c hot"
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "purpose": "Show cloud/CI services, their groups, and how they connect, with icons and side-anchored edges.",
+      "docs": "https://mermaid.js.org/syntax/architecture.html",
+      "headers": [
+        "architecture-beta"
+      ],
+      "syntax": [
+        "group id(icon)[Title] (in parentId)?  e.g. group api(cloud)[API]",
+        "service id(icon)[Title] (in groupId)?  e.g. service db(database)[Database] in api",
+        "icon and title are optional: service s1, service s2[Only Title]",
+        "junction id (in groupId)?  4-way split point, e.g. junction j1 in api",
+        "edge: a:SIDE -- SIDE:b  SIDE is L R T B, e.g. db:R -- L:server",
+        "arrowheads: a:R --> L:b, a:R <-- L:b, a:R <--> L:b",
+        "edge out of a group: a{group}:B --> T:b{group}",
+        "align row id1 id2 ...  same y; align column id1 id2 ... same x (2+ members)",
+        "title Text"
+      ],
+      "relations": [
+        "-- plain edge; < before and/or > after the dashes adds arrowheads",
+        "-[label]- edge with a label, e.g. a:R -[HTTP]-> L:b (in grammar, not in docs; parses in 12.1.0)"
+      ],
+      "blocks": [
+        "nesting is declared with 'in parentId', not by indentation or end"
+      ],
+      "notes": [
+        "Header must be architecture-beta. The 12.1.0 detector also matches plain 'architecture', but the Langium grammar only accepts 'architecture-beta', so plain fails to parse.",
+        "Built-in icons: cloud, database, disk, internet, server. Others need a registered icon pack: (logos:aws-s3); this editor has logos, mdi, fa, fas, far, fab.",
+        "Sides are uppercase L R T B only; ids named L, R, T or B, or keywords (group, service, junction, in, align, row, column), break lexing.",
+        "Ids: word chars and inner dashes (my-db ok, trailing dash not). Declare ids before referencing them.",
+        "Title [..] cannot contain [ or ] unless quoted inside: [\"a [b]\"].",
+        "{group} modifier only works on services that are inside a group; group ids themselves cannot be edge endpoints.",
+        "align order must not contradict edge sides, or layout fails."
+      ],
+      "example": "architecture-beta\n    group cloud_grp(cloud)[Cloud]\n    group data(database)[Data] in cloud_grp\n    service api(server)[API] in cloud_grp\n    service db(database)[Primary DB] in data\n    service cache(disk)[Cache] in data\n    service users(internet)[Users]\n    junction hub in cloud_grp\n    users:R --> L:api\n    api:B -- T:hub\n    hub:L -- R:db\n    hub:R -- L:cache"
+    },
+    {
+      "id": "radar",
+      "name": "Radar",
+      "purpose": "Compare several entities across multiple numeric dimensions on a circular (spider) chart.",
+      "docs": "https://mermaid.js.org/syntax/radar.html",
+      "headers": [
+        "radar-beta"
+      ],
+      "syntax": [
+        "axis id[\"Label\"], id2[\"Label\"]  e.g. axis m[\"Math\"], s[\"Science\"] (label optional: axis A, B, C)",
+        "multiple axis lines accumulate in order",
+        "curve id[\"Label\"]{v1, v2, ...}  values in axis order, e.g. curve a[\"Alice\"]{85, 90, 80}",
+        "curve id{axisId: v, ...}  keyed values, e.g. curve b{ m: 70, s: 75 }",
+        "several curves per line: curve x{1,2,3}, y{3,2,1}",
+        "max N / min N  scale bounds, e.g. max 100",
+        "ticks N  number of graticule rings, e.g. ticks 5",
+        "graticule circle | graticule polygon",
+        "showLegend true | showLegend false",
+        "title Text"
+      ],
+      "notes": [
+        "Header must be radar-beta (radar-beta: also accepted by grammar); plain 'radar' is not detected in 12.1.0.",
+        "Labels go in [\"...\"] and must be quoted strings.",
+        "Values are non-negative numbers only (no minus sign in the NUMBER terminal).",
+        "A curve uses either all plain numbers or all axis:value pairs, not a mix.",
+        "Ids cannot be keywords: axis, curve, max, min, ticks, graticule, showLegend, true, false, circle, polygon.",
+        "Option keywords are case-sensitive (showLegend, not showlegend)."
+      ],
+      "example": "radar-beta\n    title Team Skills\n    axis fe[\"Frontend\"], be[\"Backend\"], ops[\"DevOps\"]\n    axis ux[\"UX\"], qa[\"Testing\"]\n    curve alice[\"Alice\"]{4, 3, 2, 5, 3}\n    curve bob[\"Bob\"]{ fe: 2, be: 5, ops: 4, ux: 1, qa: 4 }\n    max 5\n    min 0\n    ticks 5\n    graticule polygon\n    showLegend true"
+    },
+    {
+      "id": "treemap",
+      "name": "Treemap",
+      "purpose": "Show hierarchical data as nested rectangles sized by value.",
+      "docs": "https://mermaid.js.org/syntax/treemap.html",
+      "headers": [
+        "treemap",
+        "treemap-beta"
+      ],
+      "syntax": [
+        "\"Section\"  parent node (no value), e.g. \"Products\"",
+        "\"Leaf\": value  leaf node, e.g. \"Phones\": 50",
+        "\"Leaf\", value  comma separator also accepted by grammar",
+        "\"Name\":::className  class on a section; \"Leaf\": 20:::className on a leaf",
+        "classDef name css  e.g. classDef hot fill:#f96,stroke:#333",
+        "names may use double or single quotes, e.g. 'Item A'; a name cannot contain its own quote char (use \"Men's\")",
+        "title Text"
+      ],
+      "blocks": [
+        "hierarchy by indentation (spaces or tabs); deeper indent = child of the nearest less-indented line above"
+      ],
+      "notes": [
+        "All node names must be quoted; bare names fail.",
+        "Values are non-negative numbers (digits, '.', '_' or ','); no minus sign.",
+        "A section's size is the sum of its leaves; do not give sections a value.",
+        "Several unindented top-level sections are allowed (the single-root validator in the parser package is not enforced by mermaid.parse).",
+        "Trailing whitespace after a row is a parse error (indentation tokens are significant); keep indentation consistent.",
+        "Only %% comments; no edges or links.",
+        "Number formatting is config (treemap.valueFormat), not syntax."
+      ],
+      "example": "treemap\n\"Budget\"\n    \"Operations\"\n        \"Salaries\": 700\n        \"Equipment\": 200:::hot\n    \"Marketing\"\n        \"Ads\": 400\n        \"Events\": 100\nclassDef hot fill:#f96,stroke:#333"
+    },
+    {
+      "id": "treeView",
+      "name": "Tree view",
+      "purpose": "Render a directory-like tree (file trees, hierarchies) with connector lines and optional icons/annotations.",
+      "docs": "https://mermaid.js.org/syntax/treeView.html",
+      "headers": [
+        "treeView-beta"
+      ],
+      "syntax": [
+        "one node per line; depth = indentation, e.g. src/ then indented index.js",
+        "bare label: index.js, my-project/, emoji and spaces allowed (🚀 rocket-app/)",
+        "quoted label: \"my file.txt\" or 'my file.txt' (optional; bare labels may contain spaces)",
+        "trailing / marks a directory (bold): src/",
+        "Name :::className  CSS class, built-in: :::highlight",
+        "Name icon(pack:name)  per-node icon, e.g. icon(logos:react); icon() or icon(none) hides it",
+        "Name ## text  inline description, e.g. index.ts ## entry point",
+        "annotations combine in any order: App.tsx :::highlight icon(logos:react) ## main",
+        "box-drawing input auto-detected: ├── src/  │   └── a.ts  └── README.md (also heavy ┣━━ ┗━━ ┃)",
+        "title Text  (only before the first node)"
+      ],
+      "blocks": [
+        "nesting purely by indentation (spaces; tabs expanded) or by box-drawing column position"
+      ],
+      "notes": [
+        "Header is case-sensitive treeView-beta; plain 'treeView' and 'treeview-beta' are not detected in 12.1.0.",
+        "Annotations need whitespace before them: 'a.ts :::x', not 'a.ts:::x'.",
+        "Description after ## runs to end of line; # alone is plain label text.",
+        "No edges, no ids, no classDef statement (only :::class referencing built-in or themed classes).",
+        "Icons are hidden by default (config treeView.showIcons); icon() packs must be registered by the host, else a ? renders (this editor has logos, mdi, fa, fas, far, fab).",
+        "title / accTitle / accDescr must come before the first node."
+      ],
+      "example": "treeView-beta\ntitle Repository layout\n    my-app/\n        src/\n            App.tsx :::highlight ## main component\n            index.ts ## entry point\n        tests/\n            app.test.ts\n        package.json\n        \"read me.md\""
+    },
+    {
+      "id": "eventmodeling",
+      "name": "Event modeling",
+      "purpose": "Model a system as a timeline of UI, commands, events, read models and processors in swimlanes (Event Modeling method).",
+      "docs": "https://mermaid.js.org/syntax/eventmodeling.html",
+      "headers": [
+        "eventmodeling"
+      ],
+      "syntax": [
+        "tf NN type Entity  time frame, e.g. tf 01 ui CartUI (relaxed: timeframe 01 ui CartUI)",
+        "rf NN type Entity  reset frame: no inferred link from the previous frame (relaxed: resetframe)",
+        "types: ui, cmd|command, evt|event, rmo|readmodel, pcr|processor",
+        "NN = 1-3 digits, unique across all tf/rf, e.g. 01, 102",
+        "Namespace.Entity  qualified name makes its own swimlane, e.g. evt Inventory.Changed",
+        "explicit sources: tf 05 rmo Cart ->> 02 ->> 03",
+        "inline data on the frame line: tf 02 cmd AddItem { price: number }",
+        "data reference: tf 02 cmd AddItem [[AddItem01]]",
+        "data block: data AddItem01 { NEWLINE ... NEWLINE }  (closing } at column 0)",
+        "optional data type: `json`{ \"a\": 1 }; types json jsobj figma salt uri md html text",
+        "title Text"
+      ],
+      "relations": [
+        "frames are linked automatically in timeline order (inferred)",
+        "->> NN  adds an explicit link from frame NN; rf stops the inferred link"
+      ],
+      "notes": [
+        "Header is exactly 'eventmodeling' (lowercase, no -beta); this diagram never had a beta keyword.",
+        "Duplicate frame numbers are an error; '01' and '1' are different frame names.",
+        "data blocks must span lines: '{' then newline, content, and '}' at the start of its own line. A one-line 'data X { ... }' fails.",
+        "Comments: %% plus // line and /* */ block comments are accepted.",
+        "Grammar also accepts 'entity Name', 'note NN {block}', and 'gwt NN given ... when ... then ...', but 12.1.0 docs do not cover them and the renderer ignores them.",
+        "Keywords (tf, rf, data, note, entity, gwt, and type names) cannot be used as entity names."
+      ],
+      "example": "eventmodeling\ntf 01 ui CartUI\ntf 02 cmd AddItem [[AddItem01]]\ntf 03 evt ItemAdded { description: string }\ntf 04 rmo CartItems\nrf 05 evt Inventory.StockChanged\ntf 06 pcr StockProcessor ->> 05\ntf 07 cmd ReserveStock\ndata AddItem01 {\n  description: 'john'\n  price: 20.4\n}"
+    },
+    {
+      "id": "ishikawa",
+      "name": "Ishikawa",
+      "purpose": "Fishbone (cause-and-effect) diagram: a problem at the head with categorized causes on the bones.",
+      "docs": "https://mermaid.js.org/syntax/ishikawa.html",
+      "headers": [
+        "ishikawa",
+        "ishikawa-beta"
+      ],
+      "syntax": [
+        "first line after the header = the effect/problem, e.g. Blurry Photo",
+        "each following line = one cause, plain text, e.g. Process",
+        "indent deeper to nest sub-causes under the cause above",
+        "the effect may also be indented; depth is measured relative to the first cause"
+      ],
+      "blocks": [
+        "hierarchy only by indentation; no braces or end"
+      ],
+      "notes": [
+        "The whole trimmed line is the label: no ids, shapes, quotes, classes or edges.",
+        "Header is case-insensitive (Ishikawa works); -beta is optional in 12.1.0 (docs still show ishikawa-beta).",
+        "A cause line starting with the word 'ishikawa' is lexed as the header keyword and breaks parsing.",
+        "Top-level causes become the main bones (categories); their children are sub-causes.",
+        "Whole-line %% comments are allowed."
+      ],
+      "example": "ishikawa\n    Blurry Photo\n    Process\n        Out of focus\n        Shutter speed too slow\n    User\n        Shaky hands\n    Equipment\n        Lens\n            Dirty lens\n            Damaged lens\n    Environment\n        Too dark"
+    },
+    {
+      "id": "venn",
+      "name": "Venn",
+      "purpose": "Overlapping circles showing sets and their intersections, with optional sizes and text items inside regions.",
+      "docs": "https://mermaid.js.org/syntax/venn.html",
+      "headers": [
+        "venn-beta"
+      ],
+      "syntax": [
+        "title Text  (rest of line; stops at # or ;)",
+        "set ID  e.g. set Frontend",
+        "set ID[\"Label\"]  e.g. set A[\"Alpha\"]  (also unquoted set A[Alpha])",
+        "set ID:N / set ID[\"Label\"]:N  size suffix, e.g. set A[\"Alpha\"]:20",
+        "union ID,ID[,ID...][\"Label\"][:N]  e.g. union A,B[\"Shared\"]:3",
+        "ID is a bare word [A-Za-z_][A-Za-z0-9_-]* or a quoted string, e.g. set \"Foo Bar\"",
+        "indented text under a set/union attaches to it: text TID[\"Label\"], text \"free text\", text 42",
+        "unindented form names the target sets: text A,B TID[\"Label\"]",
+        "style ID[,ID...] prop:value[, prop:value]  e.g. style A fill:#ff6b6b, fill-opacity:0.3",
+        "style props: fill, color, stroke, stroke-width, fill-opacity; targets may be sets, unions (by their ids) or text ids"
+      ],
+      "blocks": [
+        "No braces/end; a text line indented below a set or union line belongs to the most recent set/union."
+      ],
+      "notes": [
+        "Header must be exactly lowercase venn-beta (detector is case-sensitive); statement keywords themselves are case-insensitive.",
+        "Every id in a union must be declared earlier with set, otherwise: unknown set identifier.",
+        "union needs at least two ids; ids are comma-separated with no brackets around the list.",
+        "If the body is indented, any indented line starting with text after a set/union is parsed as the attached form, so text A,B TID[...] fails there; put text lines directly under their set/union instead.",
+        "Labels go in [\"...\"] right after the id, before the :N size; no quotes inside a label.",
+        "No arrows, no classDef/:::, no inline colors on set lines; color only via style lines."
+      ],
+      "example": "venn-beta\n    title Skills\n    set A[\"Frontend\"]:20\n        text A1[\"React\"]\n    set B[\"Backend\"]:12\n        text B1[\"API\"]\n    union A,B[\"Shared\"]:3\n        text AB1[\"OpenAPI\"]\n    style A fill:#ff6b6b\n    style A,B color:#333"
+    },
+    {
+      "id": "usecase",
+      "name": "Use case",
+      "purpose": "UML use case diagram: actors, use cases, system boundaries and their associations, include/extend and generalization.",
+      "docs": "https://mermaid.js.org/syntax/usecase.html",
+      "headers": [
+        "usecase-beta"
+      ],
+      "syntax": [
+        "direction LR  (TD, TB, BT, LR, RL)",
+        "actor ID / actor ID(\"Label\")  e.g. actor Admin(\"Main administrator\")",
+        "actor ID@{ type: hollow }  (type: hollow|awesome, icon: \"fa:user\", business: true)",
+        "ID(\"Label\") ellipse use case, ID[Label] rectangle use case, bare ID or \"Quoted name\" also declares one",
+        "suffix order: ID(label)@{ ... } <<Stereotype>>:::class  e.g. Quote(\"Prepare quote\")@{ business: true } <<Core>>",
+        "systemBoundary ID[\"Title\"]@{ type: package }:::cls ... end  (type rect default, or package)",
+        "note for TARGET \"text\"  (one actor or use case)",
+        "json ID@{ \"key\": \"value\", \"n\": 3 }:::cls  (strict JSON object, top level only)",
+        "edge id and label: A e1@-- \"label\" ---> B  then e1@{ animation: fast } / e1@{ animate: false }",
+        "classDef name prop:val,prop:val / class ID1,ID2 name / style ID prop:val",
+        "labels: unquoted text, \"plain string\", or \"`markdown string`\" (may span lines)"
+      ],
+      "relations": [
+        "A --> B / A <-- B / A -- B  solid association (point, reversed, markerless); more dashes = longer edge (A ---> B)",
+        "A --o B / B o-- A / A --x B / B x-- A  circle / cross association ends",
+        "A -- \"label\" --> B  labelled association (label between the dashes)",
+        "A ..> : include B  source use case includes target",
+        "A ..> : extend B  source use case extends base B",
+        "A --|> B  generalization (actor to actor or use case to use case)"
+      ],
+      "blocks": [
+        "systemBoundary ... end: one level only; inside may be only actor and use case declarations, blank lines and %% comments.",
+        "Relationships, notes, json, direction, class/style lines must be at top level (outside boundaries)."
+      ],
+      "notes": [
+        "Header is exactly lowercase usecase-beta; there is no title keyword (title Foo is a parse error) - use front matter title or accTitle.",
+        "Actors must be declared with actor ID somewhere; undeclared endpoints become ellipse use cases. There is no usecase keyword.",
+        "One statement per physical line; no ; separators. Ids match [A-Za-z0-9_]+ and are diagram-wide.",
+        "Not supported (PlantUML habits): actor A as \"X\", :Actor:, -> arrows, ..> without : include/extend, A --> B : label, package/rectangle blocks, skinparam, left/right/up/down hints, note left of.",
+        "include/extend are case-insensitive words after ..> :; a label containing include on a --> edge stays an ordinary association.",
+        "Reserved words cannot be ids: actor, end, note, for, json, class, classDef, style, direction, systemBoundary, TD/TB/BT/LR/RL, true, false.",
+        "Plain strings do not process \\n escapes; use a markdown string with a real newline or #quot; / #40; entity codes.",
+        "style values: comma-separated prop:val, no semicolons; use \\, for a literal comma."
+      ],
+      "example": "usecase-beta\ndirection LR\nactor Customer\nactor Staff(\"Order staff\")@{ type: hollow }\nsystemBoundary shop[\"Online shop\"]@{ type: package }\n    Browse(\"Browse products\")\n    Checkout(\"Checkout\") <<Core>>\n    Payment(\"Process payment\")\n    Review[Review order]\nend\nnote for Checkout \"Validates the cart\"\nCustomer --> Browse\nCustomer c1@-- \"places order\" ---> Checkout\nCheckout ..> : include Payment\nStaff --> Review\nStaff --|> Customer\nclassDef core stroke:#c33,stroke-width:2px\nclass Checkout core\nc1@{ animation: fast }"
+    },
+    {
+      "id": "wardley",
+      "name": "Wardley map",
+      "purpose": "Wardley map: components of a value chain positioned by visibility (y) and evolution (x), with dependencies and evolution moves.",
+      "docs": "https://mermaid.js.org/syntax/wardley.html",
+      "headers": [
+        "wardley-beta"
+      ],
+      "syntax": [
+        "title Text / size [1100, 600]  (size takes integers)",
+        "anchor Name [visibility, evolution]  e.g. anchor Customer [0.90, 0.95]",
+        "component Name [vis, evo]  e.g. component Hot Water [0.52, 0.80]",
+        "component Name [vis, evo] label [-60, 10] (build|buy|outsource|market) (inertia)  (each suffix optional, in this order; inertia may be bare)",
+        "evolve Name 0.75  (target evolution)",
+        "evolution Genesis -> Custom -> Product -> Commodity  (stage labels; Stage@0.25 sets boundary, Stage / Alt for dual label)",
+        "pipeline Parent { NEWLINE component Name [0.4] ... }  (single evolution value per child)",
+        "note \"text\" [vis, evo]  (text must be quoted)",
+        "annotations [0.10, 0.90] / annotation 1,[0.60, 0.65] \"text\"",
+        "accelerator Name [x, y] / deaccelerator Name [x, y]",
+        "Names: unquoted words with spaces/hyphens/()& allowed if starting with a letter; otherwise \"quoted\""
+      ],
+      "relations": [
+        "A -> B  dependency (also A --> B, A > B)",
+        "A -.-> B  dashed link",
+        "A +> B / A +< B / A +<> B  flow forward / reverse / both",
+        "A +'label'> B  labelled flow (also +'label'< and +'label'<>)",
+        "A -> B; annotation text  link label after ;"
+      ],
+      "blocks": [
+        "pipeline Parent { ... } : opening { on the pipeline line, each child component on its own line, closing } on its own line."
+      ],
+      "notes": [
+        "Header must be lowercase wardley-beta; the detector is case-insensitive but the parser rejects WARDLEY-BETA.",
+        "Coordinates are [visibility, evolution] (y first, then x), each a decimal 0.0-1.0; integers like 1 or 0 are rejected (write 1.0 / 0.0).",
+        "Names starting with a digit or other non-letter must be quoted (\"3D Printer\"); a quoted name is referenced quoted too.",
+        "Trend syntax from the docs (A -.- (x, y)) is NOT in the 12.1.0 grammar and fails to parse.",
+        "Every link needs an arrow; two names with no arrow merge into one name and fail.",
+        "Keywords are lowercase reserved words: component, anchor, evolve, evolution, pipeline, note, annotation(s), accelerator, deaccelerator, size, label, inertia.",
+        "No classDef/style; handDrawn look not supported."
+      ],
+      "example": "wardley-beta\ntitle Tea Shop\nevolution Genesis@0.25 -> Custom@0.5 -> Product@0.75 -> Commodity@1.0\nanchor Business [0.95, 0.63]\ncomponent Cup of Tea [0.79, 0.61]\ncomponent Tea [0.63, 0.81] (buy)\ncomponent Hot Water [0.52, 0.80]\ncomponent Kettle [0.43, 0.35] (build) (inertia)\ncomponent Power [0.10, 0.70] (market)\nBusiness -> Cup of Tea\nCup of Tea -> Tea\nCup of Tea -> Hot Water\nHot Water +> Kettle\nKettle -> Power; electricity\nevolve Kettle 0.62\npipeline Kettle {\n    component Electric [0.55]\n    component Stovetop [0.30]\n}\nnote \"Standard power lets kettles evolve\" [0.30, 0.49]\nannotations [0.10, 0.90]\nannotation 1,[0.43, 0.35] \"Inertia here\""
+    },
+    {
+      "id": "cynefin",
+      "name": "Cynefin",
+      "purpose": "Cynefin sense-making framework: items placed in the five fixed domains, with transitions between domains.",
+      "docs": "https://mermaid.js.org/syntax/cynefin.html",
+      "headers": [
+        "cynefin-beta",
+        "cynefin-beta:"
+      ],
+      "syntax": [
+        "title Text  (optional)",
+        "complex | complicated | clear | chaotic | confusion  opens that domain's block",
+        "\"Item label\"  quoted item on following lines under a domain (single quotes also accepted)",
+        "domain with no items is allowed (renders empty)",
+        "FROM --> TO  transition between two domains, e.g. clear --> chaotic",
+        "FROM --> TO : \"Label\"  labelled transition (label must be quoted)"
+      ],
+      "relations": [
+        "complex --> complicated : \"Pattern identified\"  only operator is -->, both ends must be domain keywords"
+      ],
+      "blocks": [
+        "A domain block is the domain keyword followed by quoted items; it ends at the next domain keyword or transition. Indentation is optional and not significant."
+      ],
+      "notes": [
+        "Header must be lowercase cynefin-beta (optionally cynefin-beta:); Cynefin-beta is not detected.",
+        "Domain names are fixed lowercase keywords; Complex, disorder, obvious, simple are rejected.",
+        "Items must be quoted strings; unquoted item text is a lexer error.",
+        "Transition labels must be quoted; complex --> clear : Pattern fails.",
+        "Self-loop transitions (complex --> complex) are ignored; domain placement is fixed regardless of order.",
+        "confusion shows at most 3 items (+N more badge); no styling, classes, or handDrawn look."
+      ],
+      "example": "cynefin-beta\n    title Incident Response\n    complex\n        \"Investigate root cause\"\n    complicated\n        \"Analyze performance data\"\n    clear\n        \"Restart service\"\n    chaotic\n        \"Page on-call immediately\"\n    confusion\n        \"Unknown failure mode\"\n    complex --> complicated : \"Pattern identified\"\n    clear --> chaotic : \"Complacency\""
+    },
+    {
+      "id": "railroad",
+      "name": "Railroad",
+      "purpose": "Railroad (syntax) diagram written directly in Mermaid's railroad IR as explicit constructor calls.",
+      "docs": "https://mermaid.js.org/syntax/railroad.html",
+      "headers": [
+        "railroad-beta"
+      ],
+      "syntax": [
+        "title Text  (optional; surrounding quotes are stripped)",
+        "rule_name = EXPR ;  every rule ends with ;",
+        "terminal(\"text\")  literal",
+        "nonterminal(\"name\")  rule reference (argument is a quoted string)",
+        "sequence(a, b, ...)  elements in order",
+        "choice(a, b, ...)  alternatives",
+        "optional(a) / zeroOrMore(a) / oneOrMore(a)  single argument",
+        "special(\"text\")  special sequence box",
+        "rule names: [A-Za-z_][A-Za-z0-9_-]*; strings \"...\" or '...'"
+      ],
+      "blocks": [
+        "Constructors nest freely; whitespace and newlines are insignificant, so a rule may span many lines until its ;."
+      ],
+      "notes": [
+        "Header must be lowercase railroad-beta (detector is case-insensitive, parser is not).",
+        "Every terminal/nonterminal must use a constructor: bare \"x\" or bare names inside an expression are errors, and nonterminal(term) without quotes fails.",
+        "Juxtaposition is not a sequence: terminal(\"a\") terminal(\"b\") fails; wrap in sequence(...).",
+        "Comments: %% line comments and /* block */ comments.",
+        "title/accTitle/accDescr must come before the first rule.",
+        "Use railroad-ebnf-beta / -abnf-beta / -peg-beta for grammar notations; this type accepts only constructors."
+      ],
+      "example": "railroad-beta\ntitle Expression\n/* W3C comment: an expression is terms joined by + or - */\nexpression = sequence(\n    nonterminal(\"term\"),\n    zeroOrMore(sequence(\n        choice(terminal(\"+\"), terminal(\"-\")),\n        nonterminal(\"term\")\n    ))\n) ;\nterm = choice(\n    oneOrMore(nonterminal(\"digit\")),\n    sequence(terminal(\"(\"), nonterminal(\"expression\"), terminal(\")\"))\n) ;\ndigit = choice(terminal(\"0\"), terminal(\"1\"), optional(special(\"other digits\"))) ;"
+    },
+    {
+      "id": "railroadEbnf",
+      "name": "Railroad (EBNF)",
+      "purpose": "Railroad (syntax) diagram generated from grammar rules written in EBNF (W3C or ISO 14977 style).",
+      "docs": "https://mermaid.js.org/syntax/railroad.html",
+      "headers": [
+        "railroad-ebnf-beta"
+      ],
+      "syntax": [
+        "title Text  (optional; surrounding quotes are stripped)",
+        "name = definition ;  or  name ::= definition ;  (every rule ends with ;)",
+        "\"text\" or 'text'  terminal; bare name  nonterminal reference",
+        "A B  or  A , B  sequence (comma optional)",
+        "A | B  choice",
+        "A?  [ A ]  optional",
+        "A*  { A }  zero or more;  A+  one or more",
+        "( A | B )  grouping",
+        "A - B  exception (needs spaces around -)",
+        "? description ?  special sequence",
+        "names: [A-Za-z_][A-Za-z0-9_-]*"
+      ],
+      "relations": [
+        "= / ::=  rule definition;  |  alternation;  ,  optional sequence separator"
+      ],
+      "notes": [
+        "Header must be lowercase railroad-ebnf-beta (detector is case-insensitive, parser is not).",
+        "Missing final ; is a parse error; rules may span lines.",
+        "- is a name character: a-b is ONE nonterminal named a-b; write a - b for exception.",
+        "No character classes: [a-z] parses as an optional nonterminal named a-z, not a range. Spell out terminals.",
+        "Comments: (* iso *), /* w3c */ and %% lines. # and // are not comments.",
+        "title/accTitle/accDescr must come before the first rule.",
+        "No repetition counts (3 * A) or BNF <angle> names."
+      ],
+      "example": "railroad-ebnf-beta\ntitle \"Arithmetic\"\n(* ISO 14977 comment: an expression is terms joined by + or - *)\nexpression = term ( ( \"+\" | \"-\" ) term )* ;\nterm = factor { ( \"*\" | \"/\" ) factor } ;\nfactor = number | \"(\" expression \")\" ;\nnumber ::= [ \"-\" ] , digit+ ;\ndigit = \"0\" | \"1\" | \"2\" | ? other digit ? ;\nletter = \"a\" | \"b\" | \"q\" ;\nsafe = letter - \"q\" ;"
+    },
+    {
+      "id": "railroadAbnf",
+      "name": "Railroad (ABNF)",
+      "purpose": "Railroad (syntax) diagram generated from grammar rules written in ABNF (RFC 5234 style).",
+      "docs": "https://mermaid.js.org/syntax/railroad.html",
+      "headers": [
+        "railroad-abnf-beta"
+      ],
+      "syntax": [
+        "title Text  (optional; surrounding quotes are stripped)",
+        "name = elements ;  every rule ends with ; (unlike RFC 5234)",
+        "A B  concatenation (whitespace)",
+        "A / B  alternation",
+        "( A B )  group;  [ A ]  optional",
+        "*A  zero or more;  1*A  one or more;  2*4A  between 2 and 4;  3A  exactly 3",
+        "\"text\"  terminal (double quotes only)",
+        "%x41 / %d65 / %b1000001  numeric values; ranges %x30-39; concatenation %x0D.0A",
+        "rule names: [A-Za-z][A-Za-z0-9-]*  e.g. local-part, ALPHA, DIGIT (core rules are just names)"
+      ],
+      "relations": [
+        "=  rule definition;  /  alternation"
+      ],
+      "notes": [
+        "Header must be lowercase railroad-abnf-beta (detector is case-insensitive, parser is not).",
+        "; both ends a rule and starts a comment: a trailing comment after a rule (a = \"x\" ; note) swallows the terminator and breaks parsing. Put ; comments on their own line.",
+        "Single-quoted strings 'x' are lexer errors; use \"x\" or %x values.",
+        "Not supported: =/ incremental alternatives, <prose-val>, %s/%i case modifiers, rules without a trailing ;.",
+        "Rule names cannot contain _ and must start with a letter.",
+        "title/accTitle/accDescr must come before the first rule."
+      ],
+      "example": "railroad-abnf-beta\ntitle \"Email Address\"\n; ABNF comment: an address is a local part and a domain\naddress = local-part \"@\" domain ;\nlocal-part = 1*( ALPHA / DIGIT / \".\" / \"-\" ) ;\ndomain = label *( \".\" label ) [ \":\" 2*5DIGIT ] ;\nlabel = 1*63( ALPHA / DIGIT / \"-\" ) ;\nDIGIT = %x30-39 ;\nALPHA = %x41-5A / %x61-7A ;"
+    },
+    {
+      "id": "railroadPeg",
+      "name": "Railroad (PEG)",
+      "purpose": "Railroad (syntax) diagram generated from grammar rules written as a Parsing Expression Grammar.",
+      "docs": "https://mermaid.js.org/syntax/railroad.html",
+      "headers": [
+        "railroad-peg-beta"
+      ],
+      "syntax": [
+        "title Text  (optional; surrounding quotes are stripped)",
+        "Name <- expression ;  every rule ends with ;",
+        "A B  sequence (whitespace)",
+        "A / B  ordered choice",
+        "A?  A*  A+  optional / zero or more / one or more (suffix)",
+        "&A  and-predicate;  !A  not-predicate (prefix)",
+        "( A / B )  grouping",
+        ".  any single character",
+        "\"text\" or 'text'  literal; bare Name  rule reference",
+        "names: [A-Za-z_][A-Za-z0-9_-]*"
+      ],
+      "relations": [
+        "<-  rule definition;  /  ordered choice"
+      ],
+      "notes": [
+        "Header must be lowercase railroad-peg-beta (detector is case-insensitive, parser is not).",
+        "Definition operator is <- only; = or <-- fail.",
+        "No character classes: [a-z] is a lexer error; spell out literals with /.",
+        "Comments: # to end of line, and %% lines.",
+        "Missing final ; is a parse error; rules may span lines.",
+        "title/accTitle/accDescr must come before the first rule."
+      ],
+      "example": "railroad-peg-beta\ntitle \"Calculator\"\n# PEG comment: ordered choice tries each alternative in turn\nExpression <- Term ((\"+\" / \"-\") Term)* ;\nTerm <- Factor ((\"*\" / \"/\") Factor)* ;\nFactor <- Number / \"(\" Expression \")\" ;\nNumber <- \"-\"? Digit+ ;\nDigit <- \"0\" / \"1\" / \"2\" / \"3\" ;\nIdent <- !Keyword &Letter . Letter* ;\nKeyword <- \"if\" / 'else' ;\nLetter <- \"a\" / \"b\" ;"
+    },
+    {
+      "id": "info",
+      "name": "Info",
+      "purpose": "Diagnostic diagram that renders the running Mermaid version; no user content.",
+      "headers": [
+        "info"
+      ],
+      "syntax": [
+        "info  (the whole diagram can be just this keyword)",
+        "info showInfo  (optional showInfo flag, same line or a following line)",
+        "title Text / accTitle: Text / accDescr: Text  (optional, after info/showInfo)"
+      ],
+      "notes": [
+        "Keyword is lowercase and case-sensitive: INFO or Info is not detected.",
+        "Nothing else is accepted: any other word (e.g. info version, info foo) is a lexer error.",
+        "No -beta suffix; there is no doc page for this type, it is a debugging aid rather than a real diagram."
+      ],
+      "example": "info\nshowInfo"
+    }
+  ]
+}

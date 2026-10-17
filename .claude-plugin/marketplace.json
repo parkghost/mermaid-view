@@ -1,0 +1,13 @@
+{
+  "name": "parkghost-mermaid-view",
+  "owner": {
+    "name": "parkghost"
+  },
+  "description": "mermaid-view: a browser editor for Mermaid diagrams in Claude's answers and your project's documents",
+  "plugins": [
+    {
+      "name": "mermaid-view",
+      "source": "./"
+    }
+  ]
+}

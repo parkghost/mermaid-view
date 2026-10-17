@@ -1,0 +1,14 @@
+# Python lint and format for the editor's server (editor/*.py): standard library only, so there is no
+# project file. Run with uvx: `uvx ruff@0.17.0 check .` and `uvx ruff@0.17.0 format --check .`.
+target-version = "py310"
+line-length = 120
+extend-exclude = [".claude-plugin/types"]
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "N", "RUF013"]
+ignore = [
+    "E501",   # long lines the formatter cannot split (strings, comments) are left as written
+    "N818",   # exceptions are named for what happened (Conflict, Failure), not suffixed Error
+    "SIM105", # try/except/pass with its reason in a comment reads better than contextlib.suppress
+    "SIM905", # tests split a literal text into lines as a file would be read
+]

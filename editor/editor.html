@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mermaid</title>
+<link rel="icon" id="favicon">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --line: #d9d9de; --panel: #f5f5f7;
+    --accent: #0a66d8; --add: #1a7f37; --add-bg: #e6f4ea; --del: #c62828; --del-bg: #fdecea;
+    --warn: #9a6700; --warn-bg: #fff4d6; --hit: #f59e0b; --mark: rgba(10, 102, 216, .12); --mark-strong: rgba(10, 102, 216, .26);
+    --t-keyword: #a626a4; --t-arrow: #0184bc; --t-string: #50a14f; --t-label: #c18401; --t-id: #4078f2;
+    --t-comment: #a0a1a7; --t-punct: #6e6e73;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --fg: #ececf0; --muted: #9a9aa2; --line: #34343a; --panel: #1f1f23;
+      --accent: #5aa2ff; --add: #6fdc8c; --add-bg: #1d3325; --del: #ff8a80; --del-bg: #3a1f1f;
+      --warn: #f0c060; --warn-bg: #3a3018; --hit: #fbbf24; --mark: rgba(90, 162, 255, .14); --mark-strong: rgba(90, 162, 255, .3);
+      --t-keyword: #c678dd; --t-arrow: #56b6c2; --t-string: #98c379; --t-label: #e5c07b; --t-id: #61afef;
+      --t-comment: #7f848e; --t-punct: #9a9aa2;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--fg);
+         display: flex; flex-direction: column; overflow: hidden; }
+  header { flex: none; z-index: 5; display: flex; gap: 12px; align-items: center;
+           padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--bg); flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0; }
+  header select, header input, label select { font: inherit; padding: 4px 6px; border: 1px solid var(--line);
+           border-radius: 6px; background: var(--panel); color: var(--fg); }
+  header input#note { flex: 1; min-width: 160px; }
+  header input.title { width: 260px; font-weight: 600; }
+  header input.tags { width: 160px; }
+  #pin.on { color: #d97706; border-color: #d97706; }
+  button.danger { color: var(--del); }
+  button.danger.armed { background: var(--del); border-color: var(--del); color: #fff; }
+
+  /* Below the header: the library and the cards, filling the window. */
+  .layout { flex: 1; min-height: 0; display: flex; }
+  #library { width: var(--lib-w, 290px); flex: none; display: flex; flex-direction: column; border-right: 1px solid var(--line);
+             background: var(--panel); min-height: 0; }
+  body.lib-hidden #library, body.lib-hidden .lib-split { display: none; }
+  /* Drag handles: a thin strip that shows on hover; while dragging nothing else reacts. */
+  .lib-split, .split { flex: none; width: 6px; cursor: col-resize; background: transparent; position: relative; }
+  .lib-split::after, .split::after { content: ''; position: absolute; inset: 0 2px; background: var(--line); }
+  .lib-split:hover::after, .split:hover::after, body.resizing .split::after { background: var(--accent); }
+  body.resizing { cursor: col-resize; user-select: none; }
+  body.resizing .view, body.resizing textarea { pointer-events: none; }
+  button.icon { padding: 2px 8px; font-size: 16px; line-height: 1.2; }
+  .lib-head { padding: 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+  [hidden] { display: none !important; }
+  .lib-tabs { display: flex; border-bottom: 1px solid var(--line); }
+  .lib-tabs button { flex: 1; border: 0; border-radius: 0; background: none; padding: 7px 0; color: var(--muted);
+                     border-bottom: 2px solid transparent; }
+  .lib-tabs button.on { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+  .lib-project { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+  .lib-empty code { font-size: 11px; }
+  .conflict { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--del);
+              background: var(--del-bg); padding: 2px 8px; border-radius: 6px; }
+  .conflict button { font-size: 12px; padding: 1px 6px; }
+  .to-project { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px;
+                border-top: 1px solid var(--line); background: var(--panel); font-size: 13px; }
+  .to-project select, .to-project input { font: inherit; padding: 3px 6px; border: 1px solid var(--line);
+                border-radius: 6px; background: var(--bg); color: var(--fg); }
+  .tp-note { color: var(--muted); }
+  .tp-note a { color: var(--accent); }
+  .lib-search { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+  .chips { display: flex; gap: 6px; }
+  .chips button { font-size: 12px; padding: 2px 8px; border-radius: 12px; }
+  .chips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .lib-list { flex: 1; overflow: auto; padding: 6px 0; font-size: 13px; }
+  .lib-list summary { cursor: pointer; padding: 4px 10px; color: var(--muted); font-weight: 600; list-style: none; }
+  .lib-list summary::before { content: '▸ '; } .lib-list details[open] > summary::before { content: '▾ '; }
+  .lib-list .session > summary { padding-left: 22px; font-weight: 500; }
+  .lib-list .count { float: right; font-weight: 400; font-size: 11px; }
+  .lib-list .page { display: block; padding: 6px 10px 6px 34px; color: var(--fg); text-decoration: none; border-left: 3px solid transparent; }
+  .lib-list .page:hover { background: var(--mark); }
+  .lib-list .page.active { background: var(--mark-strong); border-left-color: var(--accent); }
+  .lib-list .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lib-list .meta { color: var(--muted); font-size: 11px; }
+  .lib-list .pin { color: #d97706; margin-right: 4px; } .lib-list .dot { color: var(--add); margin-right: 4px; font-size: 10px; }
+  .lib-list .tag { font-size: 11px; color: var(--accent); margin-right: 6px; }
+  .lib-list .hit { font: 11px/1.4 ui-monospace, monospace; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lib-list .sub { display: block; padding: 2px 10px 2px 50px; font-size: 12px; color: var(--accent); text-decoration: none; }
+  .lib-empty { color: var(--muted); padding: 16px; text-align: center; }
+  .lib-foot { padding: 6px 10px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--line);
+              display: flex; gap: 10px; align-items: center; }
+  .lib-foot span { flex: 1; }
+  .lib-foot a, .lib-import { color: var(--accent); cursor: pointer; text-decoration: none; font-size: 11px; }
+
+  /* The export menu and the version panel. */
+  .menu-wrap { position: relative; }
+  .menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; display: grid; min-width: 150px;
+          background: var(--bg); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: 4px; }
+  .menu[hidden] { display: none; }
+  .menu button { border: 0; background: none; text-align: left; padding: 6px 10px; border-radius: 6px; }
+  .menu button:hover { background: var(--mark); }
+  .menu .png-size { padding: 4px 10px 6px; white-space: nowrap; }
+  .menu .png-size input { width: 64px; } .menu .png-size input[hidden] { display: none; }
+  .tools .docs { font-size: 12px; color: var(--accent); text-decoration: none; }
+  .body { position: relative; }
+  .versions { position: absolute; top: 0; right: 0; bottom: 0; width: 340px; z-index: 15; overflow: auto;
+              background: var(--panel); border-left: 1px solid var(--line); box-shadow: -6px 0 16px rgba(0,0,0,.12); font-size: 13px; }
+  .versions[hidden] { display: none; }
+  .v-head { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+            font-weight: 600; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .v-row { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .v-time { font-weight: 600; } .v-msg { color: var(--muted); font-size: 12px; } .v-label { color: var(--accent); font-size: 12px; }
+  .v-now, .v-first { font-size: 10px; font-weight: 400; padding: 0 5px; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); }
+  .v-acts { display: flex; gap: 6px; margin-top: 6px; } .v-acts button { font-size: 12px; padding: 1px 8px; }
+  .v-input { width: 100%; margin-top: 6px; font: inherit; padding: 3px 6px; border: 1px solid var(--accent); border-radius: 6px;
+             background: var(--bg); color: var(--fg); }
+  .v-empty { padding: 16px 12px; color: var(--muted); }
+  #status { color: var(--muted); font-size: 12px; }
+  #arrival:not([hidden]) { display: inline-flex; gap: 2px; align-items: center; }
+  button { font: inherit; padding: 3px 10px; border: 1px solid var(--line); border-radius: 6px;
+           background: var(--panel); color: var(--fg); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  label { font-size: 12px; color: var(--muted); display: inline-flex; gap: 4px; align-items: center; }
+  main { flex: 1; min-width: 0; padding: 12px; overflow: auto; display: flex; flex-direction: column; gap: 12px;
+         scroll-snap-type: y proximity; }
+  .card { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg);
+          flex: none; height: 100%; display: flex; flex-direction: column; scroll-snap-align: start; }
+  .card.full { position: fixed; inset: 0; z-index: 10; border-radius: 0; display: flex; flex-direction: column; }
+  .bar, .tools { display: flex; gap: 6px; align-items: center; padding: 6px 10px; background: var(--panel); flex-wrap: wrap; }
+  .bar { border-bottom: 1px solid var(--line); }
+  .bar .name { font-weight: 600; margin-right: 6px; }
+  .sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+  .badge { font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.edited { color: var(--add); border-color: var(--add); }
+  .declined { font-size: 11px; color: var(--muted); }
+  .spacer { flex: 1; }
+  .body { display: grid; grid-template-columns: 1fr; flex: 1; min-height: 0; }
+  .body.with-source { grid-template-columns: var(--src-w, 42%) 6px 1fr; }
+  .side { display: none; flex-direction: column; min-width: 0; min-height: 0; }
+  .split { display: none; }
+  .with-source .side { display: flex; } .with-source .split { display: block; }
+  .tools { border-bottom: 1px solid var(--line); }
+  .check { margin-left: auto; font-size: 12px; }
+  .check.ok { color: var(--add); } .check.warning { color: var(--warn); } .check.error { color: var(--del); }
+  .findings { list-style: none; margin: 0; padding: 0; max-height: 28%; overflow: auto; border-top: 1px solid var(--line);
+              font-size: 12px; background: var(--panel); }
+  .findings:empty { display: none; }
+  .findings li { padding: 3px 10px; cursor: pointer; border-left: 3px solid transparent; }
+  .findings li:hover { background: var(--mark); }
+  .findings li.error { border-color: var(--del); } .findings li.warning { border-color: var(--warn); }
+  .findings li.info { border-color: var(--muted); }
+
+  /* The Monaco editor fills its box; lines picked in the diagram are marked. */
+  .monaco-host { width: 100%; height: 100%; }
+  .mv-line-primary { background: var(--mark-strong); }
+  .mv-line-related { background: var(--mark); }
+  /* The diagram view, its minimap and what is picked. */
+  /* The canvas: a dotted grid, as the Mermaid Live Editor draws, light or dark to suit the theme. */
+  .view { position: relative; overflow: hidden; cursor: grab; min-width: 0;
+          --canvas: #ffffff; --dot: #d4d4d8;
+          background-color: var(--canvas); background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+          background-size: 16px 16px; }
+  [data-canvas="dark"] .view { --canvas: #1b1b1f; --dot: #34343b; }
+  .view.dragging { cursor: grabbing; }
+  /* The canvas pans, zooms and picks: its text is never selected (a double click fits). */
+  .view, .view * { user-select: none; -webkit-user-select: none; }
+  .stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .stage svg { display: block; max-width: none !important; }
+  .stage svg g.node, .stage svg g.cluster, .stage svg .edgeLabel, .stage svg path.flowchart-link { cursor: pointer; }
+  .stage svg .mv-hit { filter: drop-shadow(0 0 3px var(--hit)) drop-shadow(0 0 6px var(--hit)); }
+  .stage svg .mv-related { filter: drop-shadow(0 0 2px var(--accent)); }
+  .stage svg path.mv-hit, .stage svg path.mv-related { stroke: var(--hit) !important; stroke-width: 3px !important; }
+  .zoom { position: absolute; right: 8px; top: 8px; font-size: 11px; color: var(--muted); }
+  .mv-minimap { position: absolute; right: 10px; bottom: 10px; width: 200px; height: 140px; border: 1px solid var(--line);
+             border-radius: 6px; background: var(--canvas); overflow: hidden; cursor: crosshair; opacity: .95;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
+  .mv-minimap img { position: absolute; inset: 0; margin: auto; max-width: 100%; max-height: 100%; }
+  .mv-minimap .frame { position: absolute; border: 2px solid var(--accent); background: var(--mark); pointer-events: none; }
+  .error { position: absolute; left: 8px; right: 220px; bottom: 8px; padding: 6px 8px; border-radius: 6px;
+           background: var(--del-bg); color: var(--del); font: 12px/1.4 ui-monospace, monospace;
+           white-space: pre-wrap; display: none; max-height: 40%; overflow: auto; }
+  pre.diff { margin: 0; padding: 8px 10px; border-top: 1px solid var(--line); max-height: 220px; overflow: auto;
+             font: 12px/1.5 ui-monospace, monospace; display: none; background: var(--panel); }
+  pre.diff.shown { display: block; }
+  pre.diff .add { color: var(--add); background: var(--add-bg); display: block; }
+  pre.diff .del { color: var(--del); background: var(--del-bg); display: block; }
+  pre.diff .hunk { color: var(--muted); display: block; }
+  .empty { color: var(--muted); padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <button id="toggle-lib" class="icon" data-i18n-title="Show or hide the page list" title="Show or hide the page list">☰</button>
+  <h1>Mermaid</h1>
+  <input id="title" class="title" data-i18n-title="Page title (saved on Enter or when you leave the field)">
+  <button id="pin" data-i18n-title="Pinned pages are never cleaned up"></button>
+  <input id="tags" class="tags" data-i18n-placeholder="Tags, separated by commas" data-i18n-title="Tags (searchable)">
+  <button id="delete" class="danger" data-i18n="Delete">Delete</button>
+  <span class="sep"></span>
+  <label><span data-i18n="Theme">Theme</span> <select id="theme" data-i18n-title="The diagram's colors (Mermaid's themes)"></select></label>
+  <label><span data-i18n="Look">Look</span> <select id="look" data-i18n-title="The diagram's line style"></select></label>
+  <label><span data-i18n="Layout">Layout</span> <select id="layout" data-i18n-title="The layout engine: Dagre lays a large flowchart out wider, ELK taller"></select></label>
+  <input id="note" data-i18n-placeholder="A note for Claude (optional)">
+  <button id="send" class="primary" data-i18n-title="Put your edits into Claude Code's prompt box" data-i18n="Send to Claude">Send to Claude</button>
+  <span id="arrival" hidden><button id="arrival-open" class="primary" data-i18n-title="Open the diagram Claude just sent (your edits here are saved)" data-i18n="New diagram: open">New diagram: open</button><button id="arrival-close" class="icon" data-i18n-title="No, thanks">×</button></span>
+  <button id="notify-on" hidden data-i18n-title="Notify me when a new diagram arrives in a background tab; a click on the notification brings me back here" data-i18n="Turn on notifications">Turn on notifications</button>
+  <label><span data-i18n="Language">Language</span> <select id="lang"></select></label>
+  <span id="status"></span>
+</header>
+<div class="layout">
+  <aside id="library"></aside>
+  <div class="lib-split" data-i18n-title="Drag to resize; double-click to reset"></div>
+  <main id="cards"><div class="empty" data-i18n="Loading…">Loading…</div></main>
+</div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>
