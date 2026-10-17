@@ -1,5 +1,9 @@
 # mermaid-view
 
+> **Status: work in progress.** mermaid-view is unfinished and still changing: features may be
+> incomplete or rough, and how it works, what it stores and how it is configured may change without
+> notice. Try it, but do not rely on it yet.
+
 A Claude Code mod with a browser editor for Mermaid diagrams: the diagrams of Claude's answers, and
 those in your project's Markdown documents and `.mmd` files. View them zoomed and themed, edit their
 source with a real code editor linked to the drawing, keep their history, and hand your edits back to
