@@ -11,7 +11,8 @@
 //   - the model reads the person's edits, with their diffs, through diagram_edits (a page's, or a
 //     project file's), and finds earlier diagrams through diagram_search; a note sent from a
 //     page puts a prompt asking for that into the input box, in the page's language.
-// Without python3 a page is a static file. /mermaid shows the last page again, the same way.
+// Without python3 a page is a static file. /mermaid shows the last page again, the same way, or
+// with nothing shown yet, the editor itself: the session's project files, else its latest page.
 import type { EngineInterface, Register } from 'claude-code'
 
 export const MERMAID = 'https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs'
@@ -369,6 +370,14 @@ function sessionProject($: EngineInterface): Promise<ProjectInfo | undefined> {
   return project
 }
 
+/** The editor's own page for a session with nothing shown yet: the session's project files, else
+ * its pages (the latest one); undefined when the editor cannot run. */
+async function editorHome($: EngineInterface): Promise<string | undefined> {
+  const info = await sessionProject($)
+  const p = await ensureServer($)
+  return p === undefined ? undefined : `http://localhost:${p}${info ? `/f/${info.id}` : '/d'}`
+}
+
 /** A path inside the project, relative to its root; undefined outside it. */
 export function projectPath(root: string, path: string): string | undefined {
   const base = root.endsWith('/') ? root : `${root}/`
@@ -494,7 +503,10 @@ export const register: Register = (on, options) => {
   }
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'mermaid', description: 'Open the last Mermaid diagrams again' })
+    await $.command.register({
+      name: 'mermaid',
+      description: 'Open the Mermaid editor on the last diagrams, else on the project files',
+    })
     await $.tool.register({
       name: TOOL,
       description:
@@ -580,17 +592,18 @@ export const register: Register = (on, options) => {
   )
 
   on('command.run', { command: 'mermaid' }, async $ => {
-    if (!lastPage) return { text: 'No Mermaid diagram has been shown in this session yet.' }
+    const target = lastPage ?? (await editorHome($))
+    if (!target) return { text: NO_SERVER }
     const p = port
     const origin = `http://localhost:${p}`
     const outcome =
-      config.reuseTab && p !== undefined && lastPage.startsWith(`${origin}/`)
-        ? await showInOpenTab($, p, lastPage.slice(origin.length))
+      config.reuseTab && p !== undefined && target.startsWith(`${origin}/`)
+        ? await showInOpenTab($, p, target.slice(origin.length))
         : undefined
-    if (outcome === 'shown') return { text: `Showed ${lastPage} in the open tab` }
-    if (outcome === 'offered') return { text: `${lastPage} is waiting in the open tab (it has edits in progress)` }
-    const opened = await openInBrowser($, lastPage)
-    return { text: opened ? `Opened ${lastPage}` : `Could not open a browser; the page is ${lastPage}` }
+    if (outcome === 'shown') return { text: `Showed ${target} in the open tab` }
+    if (outcome === 'offered') return { text: `${target} is waiting in the open tab (it has edits in progress)` }
+    const opened = await openInBrowser($, target)
+    return { text: opened ? `Opened ${target}` : `Could not open a browser; the page is ${target}` }
   })
 
   on('turn.complete', async ($, e, next) => {

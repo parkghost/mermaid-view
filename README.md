@@ -49,7 +49,7 @@ Needs `python3` (standard library only), `git` for history (optional), and a way
 `wslview` (WSL), `xdg-open` (Linux) or `open` (macOS). Monaco and Mermaid load from cdn.jsdelivr.net.
 
 Once installed, a Claude answer with a ` ```mermaid ` block opens in the editor; `/mermaid` shows the
-last page again.
+last page again, or before any diagram has been shown, opens the editor on the project's files.
 
 ## On its own
 

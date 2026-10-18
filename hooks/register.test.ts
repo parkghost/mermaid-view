@@ -505,6 +505,28 @@ test('/mermaid shows the last page in the open tab, and opens a tab only when no
   expect(ran.filter(argv => argv[0] === 'wslview').length).toBe(2)
 })
 
+test('/mermaid with nothing shown yet opens the editor on the project files', async ($, on) => {
+  const { opened } = projectSession(on, {})
+  const out = await $.command.run(typedMermaid)
+  expect(opened).toEqual(['http://localhost:8771/f/p1'])
+  expect(out.text).toContain('Opened')
+})
+
+test('/mermaid with nothing shown and no editor says so, and opens nothing', async ($, on) => {
+  const ran: (readonly string[])[] = []
+  // biome-ignore lint/correctness/useYield: python3 is missing, so the editor yields nothing
+  on('process.spawn', async function* () {
+    throw new Error('python3: not found')
+  })
+  on('process.run', ($, e) => {
+    ran.push(e.argv)
+    return exited(0)
+  })
+  const out = await $.command.run(typedMermaid)
+  expect(out.text).toContain('not running')
+  expect(ran).toEqual([])
+})
+
 test('a note the prompt box refuses is acknowledged undelivered, and filled on a later poll', async ($, on) => {
   const clock = mock.clock(on)
   const note = { id: 'n1', page: 'p1', note: '改成 C' }
