@@ -21,6 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.0 # publishes no major-version tag
+        with:
+          # Its cache's key: the files that pin the tools uvx runs (no requirements or lock files here).
+          cache-dependency-glob: |
+            .github/workflows/ci.yml
+            .pre-commit-config.yaml
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -37,6 +42,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.0 # publishes no major-version tag
+        with:
+          # Its cache's key: the files that pin the tools uvx runs (no requirements or lock files here).
+          cache-dependency-glob: |
+            .github/workflows/ci.yml
+            .pre-commit-config.yaml
       - run: uv run --python ${{ matrix.python }} --no-project python -I -m unittest discover -s editor
 
   page:
