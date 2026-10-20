@@ -26,6 +26,7 @@ jobs:
           cache-dependency-glob: |
             .github/workflows/ci.yml
             .pre-commit-config.yaml
+          cache-suffix: lint # a key of its own: jobs sharing one race to save it, and all but one warn
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -47,6 +48,7 @@ jobs:
           cache-dependency-glob: |
             .github/workflows/ci.yml
             .pre-commit-config.yaml
+          cache-suffix: editor-py${{ matrix.python }}
       - run: uv run --python ${{ matrix.python }} --no-project python -I -m unittest discover -s editor
 
   page:
