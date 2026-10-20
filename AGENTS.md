@@ -99,4 +99,9 @@ code is wrong, or the test was a change-detector, and say which before changing 
 
 Anything that reads the rendered SVG (linking, lighting, export) must be checked in all three looks
 (classic, neo, hand-drawn) and across diagram types, not one flowchart: Mermaid classes elements
-differently per look. See `tasks/lessons.md`, and add to it when a mistake teaches a rule.
+differently per look.
+
+A drawing bug seen on one system is measured there before it is fixed, and the fix shown to turn the
+measure from wrong to right: Linux headless Chrome does not lay text out as Chrome on Windows does at
+a fractional scale (175%). Under WSL, a headless Windows Chrome with its own `--user-data-dir` and
+the person's `--force-device-scale-factor` does, reachable over its `--remote-debugging-port`.
