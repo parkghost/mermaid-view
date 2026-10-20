@@ -18,7 +18,8 @@ npx @biomejs/biome@2.5.15 check --write .              # JS, TS and JSON: lint a
 uvx pre-commit install                                 # once per clone: each commit runs both (.pre-commit-config.yaml)
 ```
 
-Run the tests of every part you touched, and both linters, before calling a change done. The tools
+Run the tests of every part you touched, and both linters, before calling a change done; CI
+(`.github/workflows/ci.yml`) runs them all on each push to main and each pull request. The tools
 run through `uvx` and `npx` at pinned versions: there is no `pyproject.toml` or `package.json`, and
 none should be added for them. A rule turned off in `ruff.toml` or `biome.json` says why; fix a
 finding rather than silencing it, unless the rule fights a pattern the code uses on purpose.

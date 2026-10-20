@@ -1,0 +1,61 @@
+# The checks AGENTS.md asks of a change, on each push to main and each pull request: both linters
+# (through pre-commit), the editor's server on its oldest and a current Python on Linux and macOS,
+# the page's modules, and the mod's tests and manifest.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  editor:
+    name: editor (${{ matrix.os }}, Python ${{ matrix.python }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.9", "3.14"] # 3.9: the python3 macOS ships
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv run --python ${{ matrix.python }} --no-project python -I -m unittest discover -s editor
+
+  page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node --test editor/static/*.test.mjs
+
+  mod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Pinned like the linters: a newer release can change the plugin API the mod is written to.
+      - run: npm install -g @anthropic-ai/claude-code@2.1.304
+      - run: claude plugin validate .
+      - run: claude plugin test .

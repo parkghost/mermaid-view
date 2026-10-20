@@ -1,0 +1,53 @@
+name: Bug report
+description: Something in the editor or the mod does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Ask Claude for a diagram that ...
+        2. In the editor, ...
+    validations:
+      required: true
+  - type: textarea
+    id: diagram
+    attributes:
+      label: Diagram source
+      description: The Mermaid source involved, if any.
+      render: text
+  - type: dropdown
+    id: os
+    attributes:
+      label: System
+      options: [Linux, WSL, macOS, Windows, Other]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: "`python3 --version`, `claude --version`, the plugin's version, and the browser."
+      placeholder: Python 3.12.3, Claude Code 2.1.304, mermaid-view 0.2.1, Chrome 141
+    validations:
+      required: true
+  - type: dropdown
+    id: look
+    attributes:
+      label: Look
+      description: For a problem with a drawing, the look it was drawn in.
+      options: [Not about a drawing, classic, neo, hand-drawn, All of them]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Messages
+      description: The toast Claude Code showed, the browser console's errors, or the editor's output.
+      render: text
