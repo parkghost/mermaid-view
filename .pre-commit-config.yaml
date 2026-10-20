@@ -1,0 +1,36 @@
+# The checks each commit runs, through pre-commit (https://pre-commit.com), with no project file:
+#   uvx pre-commit install       # once per clone
+#   uvx pre-commit run --all-files
+# Ruff and Biome run as AGENTS.md runs them, at the same pinned versions; they fix what they can,
+# and a fixed file stops the commit to be staged again.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$ # a Markdown line break is two trailing spaces
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (Python lint)
+        entry: uvx ruff@0.17.0 check --fix --force-exclude
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format (Python format)
+        entry: uvx ruff@0.17.0 format --force-exclude
+        language: system
+        types: [python]
+      - id: biome
+        name: biome check (JS, TS and JSON lint and format)
+        entry: npx -y @biomejs/biome@2.5.15 check --write --no-errors-on-unmatched --files-ignore-unknown=true
+        language: system
+        types_or: [javascript, ts, json]

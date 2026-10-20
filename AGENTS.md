@@ -15,6 +15,7 @@ python3 -I editor/mermaid_view.py --project . --open   # run the editor on this 
 
 uvx ruff@0.17.0 check . && uvx ruff@0.17.0 format .    # Python: lint, then format (ruff.toml)
 npx @biomejs/biome@2.5.15 check --write .              # JS, TS and JSON: lint and format (biome.json)
+uvx pre-commit install                                 # once per clone: each commit runs both (.pre-commit-config.yaml)
 ```
 
 Run the tests of every part you touched, and both linters, before calling a change done. The tools
