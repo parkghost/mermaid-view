@@ -17,6 +17,7 @@ import { loadConfigSchema } from './frontmatter.js'
 import { inEnglish, LANGS, lang, list, t, translatePage } from './i18n.js'
 import { iconPacks } from './icons.js'
 import { esc, Library, projectOptions } from './library.js'
+import { snappedSizes } from './measure.js'
 import { fixAll, format, lint, TYPES, typeOf } from './mermaid-lang.js'
 import { loadMonaco, MonacoSource } from './monaco-source.js'
 import { store, stored } from './prefs.js'
@@ -204,7 +205,7 @@ function renderWith(id, text, extra = {}, type = typeOf(text)) {
     const mermaid = await mermaidReady
     const { look, layout } = fitTo(type, currentConfig.look, currentConfig.layout)
     mermaid.initialize({ ...currentConfig, look, layout, ...extra })
-    return mermaid.render(id, text)
+    return snappedSizes(() => mermaid.render(id, text))
   })
   drawing = run.catch(() => {})
   return run
