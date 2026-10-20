@@ -8,6 +8,8 @@ parser and the editor's lint, run in an open editor tab (checks.py); every write
 A diagram's index counts from 0 (diagram 1 is index 0); the reports name both.
 """
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from dataclasses import dataclass
 

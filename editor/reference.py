@@ -4,6 +4,8 @@ with. Its one source is static/syntax-reference.json, which the page's WebMCP to
 any case.
 """
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
 

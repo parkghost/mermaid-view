@@ -8,6 +8,8 @@ on the machine, history is off and pages work as before.
 Version names live in each page folder's labels.json ({commit: name}), versioned with the rest.
 """
 
+from __future__ import annotations
+
 import json
 import shutil
 import subprocess

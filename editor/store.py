@@ -2,6 +2,8 @@
 original-<i>.mmd and, once the person edits diagram i, edited-<i>.mmd. "Send to Claude" leaves
 a note in this server's outbox for its mod to take."""
 
+from __future__ import annotations
+
 import difflib
 import json
 import re
@@ -35,7 +37,7 @@ class Store:
     since pages were organized: title, project (root and name), branch, session, kinds, pinned
     and tags. Older pages lack them and list under no project."""
 
-    def __init__(self, root: Path, history: "History | None" = None):
+    def __init__(self, root: Path, history: History | None = None):
         self.root = root
         self.pages = root / "pages"
         self.pages.mkdir(parents=True, exist_ok=True)

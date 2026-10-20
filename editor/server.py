@@ -9,6 +9,8 @@ page elsewhere cannot reach it through DNS rebinding or a cross-site POST); no o
 frame its page (Content-Security-Policy frame-ancestors).
 """
 
+from __future__ import annotations
+
 import json
 import re
 import select

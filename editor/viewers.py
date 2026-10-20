@@ -13,6 +13,8 @@ An event counts as shown only once it is written to a stream still open; else th
 tried.
 """
 
+from __future__ import annotations
+
 import json
 import queue
 import threading

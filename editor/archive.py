@@ -1,6 +1,8 @@
 """Pages in and out of the data folder: a page as Markdown, every page as a zip and back, and
 the one-time move from the folder pages were kept in before the data folder became an option."""
 
+from __future__ import annotations
+
 import io
 import json
 import re

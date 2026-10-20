@@ -1,5 +1,7 @@
 """The editor as a program: with --exit-with-parent it ends with the process that started it."""
 
+from __future__ import annotations
+
 import json
 import os
 import subprocess

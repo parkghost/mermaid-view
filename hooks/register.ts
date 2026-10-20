@@ -38,6 +38,7 @@ const NO_SERVER = 'The mermaid-view page server is not running (python3 missing?
 let port: number | undefined
 let starting: Promise<number | undefined> | undefined
 let polling = false
+let warned = false // the editor failed to start, and the person was told why (once a module life)
 let delivering = false // a note on its way into the prompt box
 let lastPage: string | undefined // a URL or a file path
 let project: Promise<ProjectInfo | undefined> | undefined // the session's project, registered with the editor
@@ -195,12 +196,21 @@ function inOpenTab(what: string, outcome: 'shown' | 'offered'): string {
     : `Mermaid: ${what} waiting in the open tab, which has edits in progress (${FIND_TAB})`
 }
 
+/** Tells the person, once, that the editor did not start and why; the static page stands in. */
+function warnNoEditor($: EngineInterface, why: string): void {
+  if (warned) return
+  warned = true
+  $.ui.toast(`Mermaid: the editor did not start (${why.slice(0, 160)}); diagrams open as a static page`)
+}
+
 /** The page server's port, starting it the first time; undefined when it cannot run. */
 function ensureServer($: EngineInterface): Promise<number | undefined> {
   if (port !== undefined) return Promise.resolve(port)
   starting ??= new Promise(resolve => {
     void (async () => {
       let out = ''
+      let err = '' // the end of what it wrote to stderr: why it did not start, when it did not
+      let listening = false
       try {
         const child = $.process.spawn({
           argv: [
@@ -220,17 +230,24 @@ function ensureServer($: EngineInterface): Promise<number | undefined> {
         })
         // The loop is the child's life: it runs on after resolving, until the server or the module ends.
         for await (const piece of child) {
-          if (port !== undefined) continue
+          if (listening) continue
+          if (piece.stream === 'stderr') {
+            err = (err + piece.text).slice(-2048)
+            continue
+          }
           out = (out + piece.text).slice(-2048)
           const found = /PORT (\d+)/.exec(out)
           if (found) {
+            listening = true
             port = Number(found[1])
             resolve(port)
             startPolling($)
           }
         }
+        if (!listening) warnNoEditor($, err.trim().split('\n').pop() || 'it stopped before listening')
       } catch {
-        // no python3, or it failed: the static page stands in
+        // no python3: the static page stands in
+        warnNoEditor($, 'python3 was not found')
       } finally {
         port = undefined
         starting = undefined

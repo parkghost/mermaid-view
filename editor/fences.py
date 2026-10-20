@@ -1,6 +1,8 @@
 """Markdown code fences as CommonMark reads them: what closes a block, and a fence long enough that
 no line of a source closes its block early (a diagram may hold a line of ``` in a label or a note)."""
 
+from __future__ import annotations
+
 import re
 from collections.abc import Sequence
 

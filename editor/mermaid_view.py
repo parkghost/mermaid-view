@@ -9,6 +9,8 @@ started it ends (the mod starts it so; run on its own, it runs until stopped). P
 once listening. Standard library only.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import shutil
@@ -21,6 +23,9 @@ from pathlib import Path
 
 # Run as `python3 -I`, which leaves the script's folder off the import path: its modules are ours.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Checked before they load: on an older Python they would stop with an error that names no version.
+if sys.version_info < (3, 9):  # noqa: UP036 (the guard for the Pythons below the target)
+    sys.exit(f"mermaid-view needs Python 3.9 or newer, not {sys.version.split()[0]}")
 
 from archive import migrate  # noqa: E402
 from history import History  # noqa: E402

@@ -8,6 +8,7 @@ Guidance for coding agents working in this repository. What the project does is 
 ```
 claude plugin test .                                   # the mod's tests (hooks/*.test.ts)
 python3 -I -m unittest discover -s editor              # the editor's server and its MCP endpoint
+uv run --python 3.9 --no-project python -I -m unittest discover -s editor   # the same on the oldest Python
 node --test editor/static/*.test.mjs                   # the page's modules
 claude plugin validate .                               # the plugin manifest
 python3 -I editor/mermaid_view.py --project . --open   # run the editor on this repository
@@ -27,7 +28,7 @@ finding rather than silencing it, unless the rule fights a pattern the code uses
 
 - `hooks/register.ts`: the Claude Code mod (TypeScript, run by Claude Code; no build step). Types come
   from `.claude-plugin/types/`, written by Claude Code when it loads the mod (ignored by git).
-- `editor/*.py`: the server, Python standard library only. Tests are `editor/test_*.py` (`unittest`).
+- `editor/*.py`: the server, Python 3.9+ standard library only. Tests are `editor/test_*.py` (`unittest`).
 - `editor/editor.html`, `editor/static/*.js`: the page, plain ES modules served as they are (no
   bundler, no `node_modules`). Monaco and Mermaid load from cdn.jsdelivr.net at pinned versions.
   Tests are `editor/static/*.test.mjs` (`node:test`), on the modules that need no DOM.
@@ -66,7 +67,10 @@ link to the drawing in every look (see Testing).
 - **Language**: code, comments, docs and commit messages in English.
 - **Text people read** (see Translation below): written in English in the code, through `t()`, with
   its Traditional Chinese in the catalog. Do not quote the Chinese in the docs.
-- **Python**: standard library only, no third-party packages. Run with `python3 -I`.
+- **Python**: standard library only, no third-party packages. Run with `python3 -I`. Python 3.9 or
+  newer: 3.9 is the `python3` macOS ships. `ruff.toml` targets it and puts
+  `from __future__ import annotations` in each module; nothing newer than 3.9 (`zip(strict=)`,
+  `match`, `write_text(newline=)`) is used.
 - **No build step**: the page's modules are served as written; do not add a bundler, transpiler or
   `package.json` dependencies.
 - **Mermaid version**: everything targets Mermaid 12.1.0: the page (`editor/static/app.js`), the

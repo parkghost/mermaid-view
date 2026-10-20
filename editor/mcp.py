@@ -17,6 +17,8 @@ Origin is checked against DNS rebinding: a browser's request is taken from a loc
 a request without Origin (not from a browser) is taken. The caller checks Host.
 """
 
+from __future__ import annotations
+
 import base64
 import json
 from collections.abc import Callable

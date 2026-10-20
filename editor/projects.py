@@ -12,6 +12,8 @@ Only files under a registered project's root are read or written: a path that le
 (.., an absolute path, a symlink out of it) or names another kind of file is refused.
 """
 
+from __future__ import annotations
+
 import fnmatch
 import hashlib
 import json
@@ -370,7 +372,7 @@ class Project:
             part = (f"## {heading.strip()}{nl}{nl}" if heading.strip() else "") + fenced("mermaid", body, nl) + nl
             joined = (old.rstrip("\r\n") + nl + nl if old.strip() else "") + part
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(joined, "utf-8", newline="")
+            path.write_bytes(joined.encode("utf-8"))  # as bytes too: its line ends stay as joined
         return {"path": self.rel(path), "index": before}
 
     def diagram_at(self, rel: str, index: int, commit: str) -> str | None:

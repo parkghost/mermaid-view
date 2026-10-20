@@ -1,5 +1,7 @@
 """python3 -I -m unittest discover -s editor  (from the repository root)"""
 
+from __future__ import annotations
+
 import http.client
 import json
 import queue

@@ -7,6 +7,8 @@ the next tab; with no tab answering, the check is "not checked", never a success
 Only a pending check's id is answered, only by the tab it was handed to, and only once.
 """
 
+from __future__ import annotations
+
 import secrets
 import threading
 import time

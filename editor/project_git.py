@@ -1,6 +1,8 @@
 """A project's own git, read only: a file's commits and its text at one of them. The editor
 never commits to a project; the person does, as with any other edit."""
 
+from __future__ import annotations
+
 import os
 import shutil
 import subprocess

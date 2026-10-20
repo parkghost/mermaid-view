@@ -148,6 +148,37 @@ test('with no opener it falls through each in turn', async ($, on) => {
   expect(tried).toEqual(['wslview', 'xdg-open', 'open'])
 })
 
+test('an editor that stops before listening says why, once, and the static page stands in', async ($, on) => {
+  const written: string[] = []
+  const toasts: string[] = []
+  mock.env(on, { HOME: '/home/tester' })
+  on('process.spawn', async function* () {
+    yield { stream: 'stderr' as const, text: 'Traceback (most recent call last):\n' }
+    yield { stream: 'stderr' as const, text: 'mermaid-view needs Python 3.9 or newer, not 3.8.20\n' }
+    return { value: { code: 1, signal: null } }
+  })
+  on('fs.write', ($, e) => {
+    written.push(e.path)
+    return { value: undefined }
+  })
+  on('process.run', () => exited(0))
+  on('ui.toast', ($, e) => {
+    toasts.push(e.text)
+    return { value: undefined }
+  })
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+
+  await $.turn.complete(turnEnd(ANSWER))
+  await settle(() => written.length > 0)
+  await $.turn.complete(turnEnd(ANSWER))
+  await settle(() => written.length > 1)
+
+  expect(written.every(path => path.endsWith('.html'))).toBe(true)
+  const why = toasts.filter(text => text.includes('did not start'))
+  expect(why.length).toBe(1)
+  expect(why[0]).toContain('needs Python 3.9 or newer')
+})
+
 test('the prompt names the page, the note and the tool, in the language of the page that sent it', () => {
   const en = promptFor({ page: 'p1', note: ' change B to C ', lang: 'en' })
   expect(en).toContain('page p1')

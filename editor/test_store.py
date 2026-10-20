@@ -1,5 +1,7 @@
 """python3 -I -m unittest discover -s editor  (from the repository root)"""
 
+from __future__ import annotations
+
 import json
 import os
 import subprocess
@@ -319,7 +321,7 @@ class ArchiveTest(unittest.TestCase):
         with zipfile.ZipFile(buffer, "w") as z:
             z.writestr(f"pages/{Z9}/meta.json", json.dumps({"count": 1}))
             z.writestr(f"pages/{Z9}/original-0.mmd", "flowchart TD\n  P --> Q\n")
-            for page_id, meta in zip(bad, ({"count": "1"}, {"count": 1, "tags": "x"}, [1]), strict=True):
+            for page_id, meta in zip(bad, ({"count": "1"}, {"count": 1, "tags": "x"}, [1])):
                 z.writestr(f"pages/{page_id}/meta.json", json.dumps(meta))
                 z.writestr(f"pages/{page_id}/original-0.mmd", "flowchart TD\n  A --> B\n")
         target = Path(self.tmp.name) / "other"

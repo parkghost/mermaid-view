@@ -45,8 +45,10 @@ claude plugin install mermaid-view@parkghost-mermaid-view
 The first command adds this GitHub repository as a plugin marketplace; the second installs the plugin
 from it. `claude plugin marketplace update parkghost-mermaid-view` picks up new releases.
 
-Needs `python3` (standard library only), `git` for history (optional), and a way to open the browser:
-`wslview` (WSL), `xdg-open` (Linux) or `open` (macOS). Monaco and Mermaid load from cdn.jsdelivr.net.
+Runs on Linux, WSL and macOS. Needs `python3` 3.9 or newer (standard library only; the one macOS
+ships will do), `git` for history (optional), and a way to open the browser: `wslview` (WSL),
+`xdg-open` (Linux) or `open` (macOS). Monaco and Mermaid load from cdn.jsdelivr.net. When the editor
+cannot start, a toast says why and diagrams open as a static page instead of the editor.
 
 Once installed, a Claude answer with a ` ```mermaid ` block opens in the editor; `/mermaid` shows the
 last page again, or before any diagram has been shown, opens the editor on the project's files.
