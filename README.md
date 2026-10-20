@@ -52,8 +52,9 @@ the first time the page uses each file, and are kept in the data folder's `vendo
 editor works offline. When the editor cannot start, a toast says why and diagrams open as a static
 page instead of the editor, which needs the CDN.
 
-Once installed, a Claude answer with a ` ```mermaid ` block opens in the editor; `/mermaid` shows the
-last page again, or before any diagram has been shown, opens the editor on the project's files.
+Once installed, a Claude answer with a ` ```mermaid ` block opens in the editor (with the option
+`openAnswers` off, it is kept as a page without opening); `/mermaid` shows the last page again, or
+before any diagram has been shown, opens the editor on the project's files.
 
 ## On its own
 
@@ -82,6 +83,7 @@ Set in `/config` (or `pluginConfigs["mermaid-view"].options` in `~/.claude/setti
 |---|---|---|
 | `dataDir` | `~/.local/share/mermaid-view` | Pages, edits and their git history, and the page's libraries (`vendor/`, not in the history). Pages in the former `~/.cache/mermaid-view` move here once. |
 | `keepDays` | `90` | Pages neither edited nor pinned are removed after this many days; `0` keeps them all. |
+| `openAnswers` | `true` | Open the diagrams of each answer in the editor; `false` keeps them as a page all the same, and `/mermaid` opens it. |
 | `openFiles` | `true` | Open a project document or `.mmd` file Claude writes that holds diagrams (once per file per session). |
 | `reuseTab` | `true` | Show a new answer's diagrams, or a project file Claude writes, in the editor tab already open instead of a new tab; `false` always opens a new tab. |
 

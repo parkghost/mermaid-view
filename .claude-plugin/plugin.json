@@ -1,6 +1,6 @@
 {
   "name": "mermaid-view",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A Claude Code mod: a browser editor for Mermaid diagrams, those of Claude's answers and those in your project's Markdown documents and .mmd files. Zoom, minimap, Monaco source editing linked to the diagram, themes, a library, git history and export; edits go back to Claude",
   "author": {
     "name": "parkghost"
@@ -17,6 +17,12 @@
       "title": "Keep unedited pages (days)",
       "description": "Pages neither edited nor pinned are removed after this many days; 0 keeps them all.",
       "default": 90
+    },
+    "openAnswers": {
+      "type": "boolean",
+      "title": "Open answers' diagrams",
+      "description": "When an answer of Claude's holds Mermaid diagrams, open them in the editor. Off, they are kept as a page all the same, and /mermaid opens it.",
+      "default": true
     },
     "openFiles": {
       "type": "boolean",

@@ -25,8 +25,14 @@ export const TOOL_NAME = 'mcp__mermaid-view__diagram_edits' // mcp__<plugin>__<T
 const SEARCH = 'diagram_search'
 export const SEARCH_NAME = 'mcp__mermaid-view__diagram_search'
 // The plugin's options (plugin.json userConfig), as register() receives them.
-type Options = { dataDir: string; keepDays: number; openFiles: boolean; reuseTab: boolean }
-let config: Options = { dataDir: '~/.local/share/mermaid-view', keepDays: 90, openFiles: true, reuseTab: true }
+type Options = { dataDir: string; keepDays: number; openAnswers: boolean; openFiles: boolean; reuseTab: boolean }
+let config: Options = {
+  dataDir: '~/.local/share/mermaid-view',
+  keepDays: 90,
+  openAnswers: true,
+  openFiles: true,
+  reuseTab: true,
+}
 // The project files the editor opens: Markdown documents and diagram files.
 const DIAGRAM_FILE = /\.(md|markdown|mdx|mmd|mermaid)$/i
 // Where pages were kept before the data folder became an option: moved once into it.
@@ -360,13 +366,18 @@ async function show($: EngineInterface, diagrams: readonly string[], answer = ''
   let outcome: 'shown' | 'offered' | undefined
   if (p !== undefined && id !== undefined) {
     target = `http://localhost:${p}/d/${id}`
-    outcome = config.reuseTab ? await showInOpenTab($, p, `/d/${id}`) : undefined
+    outcome = config.openAnswers && config.reuseTab ? await showInOpenTab($, p, `/d/${id}`) : undefined
   } else {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-').replace(/Z$/, '')
     target = `${await dataRoot($)}/diagram-${stamp}.html`
     await $.fs.write(target, page(diagrams, `Mermaid ${stamp}`))
   }
   lastPage = target
+  if (!config.openAnswers) {
+    // Kept, not shown: the person opens them when they choose.
+    $.ui.toast(`Mermaid: ${count} kept; /mermaid opens ${diagrams.length === 1 ? 'it' : 'them'}`)
+    return
+  }
   if (outcome) {
     $.ui.toast(inOpenTab(count, outcome))
     return
@@ -527,6 +538,7 @@ export const register: Register = (on, options) => {
   config = {
     dataDir: typeof given?.dataDir === 'string' && given.dataDir.trim() ? given.dataDir.trim() : config.dataDir,
     keepDays: typeof given?.keepDays === 'number' && given.keepDays >= 0 ? given.keepDays : config.keepDays,
+    openAnswers: typeof given?.openAnswers === 'boolean' ? given.openAnswers : config.openAnswers,
     openFiles: typeof given?.openFiles === 'boolean' ? given.openFiles : config.openFiles,
     reuseTab: typeof given?.reuseTab === 'boolean' ? given.reuseTab : config.reuseTab,
   }

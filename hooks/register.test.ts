@@ -502,6 +502,21 @@ test('with reuseTab off a new page always opens a tab', { options: { reuseTab: f
   expect(ran.filter(argv => argv[0] === 'wslview').length).toBe(1)
 })
 
+test(
+  "with openAnswers off an answer's diagrams are kept but not shown, and /mermaid shows them",
+  { options: { openAnswers: false } },
+  async ($, on) => {
+    const { ran, toasts, shows } = editorSession(on, () => ({ status: 200, text: '{"shown":true}' }))
+    await $.turn.complete(turnEnd(ANSWER))
+    await settle(() => toasts.length > 0)
+    expect(shows).toEqual([]) // not even in a tab that would take them
+    expect(ran.filter(argv => argv[0] === 'wslview')).toEqual([])
+    expect(toasts[0]).toContain('/mermaid')
+    const out = await $.command.run(typedMermaid)
+    expect(out.text).toContain('/d/2026-10-11T07-09-36-825')
+  },
+)
+
 test('a new page waits in an open tab with edits in progress instead of opening another', async ($, on) => {
   const { ran, toasts } = editorSession(on, () => ({ status: 200, text: '{"shown":true,"offered":true}' }))
   await $.turn.complete(turnEnd(ANSWER))
