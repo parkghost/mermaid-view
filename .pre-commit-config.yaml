@@ -34,3 +34,4 @@ repos:
         entry: npx -y @biomejs/biome@2.5.15 check --write --no-errors-on-unmatched --files-ignore-unknown=true
         language: system
         types_or: [javascript, ts, json]
+        require_serial: true # npx installs into one cache: parallel runs corrupt it (EJSONPARSE)
