@@ -72,7 +72,8 @@ Claude Code's toast says which happened, and reminds you of the dot and the tab 
 
 ## History
 
-The data folder is a git repository. Edits are committed after a few quiet seconds; each diagram's
+The data folder is a git repository (its `vendor/`, the page's libraries kept from the CDN, is left
+out). Edits are committed after a few quiet seconds; each diagram's
 versions can be compared, restored and named. A project file's history is the project's own git
 instead ([Project files](project-files.md)).
 

@@ -28,7 +28,7 @@ test('a set two names share is fetched once', async () => {
   await packs.fa.loader()
   await packs.fas.loader()
   assert.equal(urls.length, 1)
-  assert.match(urls[0], /^https:\/\/cdn\.jsdelivr\.net\/npm\/@iconify-json\/fa6-solid@[\d.]+\/icons\.json$/)
+  assert.match(urls[0], /^\/vendor\/npm\/@iconify-json\/fa6-solid@[\d.]+\/icons\.json$/)
 })
 
 test('a set that failed to load is fetched again when next asked for', async () => {

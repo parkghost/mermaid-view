@@ -8,9 +8,6 @@
 // diagram Claude shows can open in this tab instead of a new one (the editor's events). An agent
 // in the browser can use the page through WebMCP (webmcp.js).
 
-import tidyTree from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-tidy-tree@1.0.1/dist/mermaid-layout-tidy-tree.esm.min.mjs'
-import zenuml from 'https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@1.0.1/dist/mermaid-zenuml.esm.min.mjs'
-import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs'
 import { editing, favicon, listening, notify, STALE, TYPING_GRACE } from './arrival.js'
 import { checkReport, sourceLine } from './check.js'
 import { linkDrawing } from './diagram-link.js'
@@ -30,6 +27,21 @@ import { VersionPanel } from './versions.js'
 import { Minimap, Viewport } from './viewport.js'
 import { startWebMcp } from './webmcp.js'
 
+// Mermaid and its two add-ons, loading from the start but awaited only by what draws or parses: the
+// library and the page around the cards do not wait for them (static imports would hold the whole
+// module, and with it the list of project files, until they came). From the CDN through the editor,
+// which keeps them (/vendor/, editor/vendor.py).
+const mermaidReady = Promise.all([
+  import('/vendor/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs'),
+  import('/vendor/npm/@mermaid-js/layout-tidy-tree@1.0.1/dist/mermaid-layout-tidy-tree.esm.min.mjs'),
+  import('/vendor/npm/@mermaid-js/mermaid-zenuml@1.0.1/dist/mermaid-zenuml.esm.min.mjs'),
+]).then(async ([{ default: mermaid }, { default: tidyTree }, { default: zenuml }]) => {
+  mermaid.registerIconPacks(iconPacks())
+  mermaid.registerLayoutLoaders(tidyTree) // its layout code loads the first time a mind map takes it
+  await mermaid.registerExternalDiagrams([zenuml]) // ZenUML itself (3 MB) loads with the first ZenUML diagram
+  return mermaid
+})
+
 // The page's text in its language (i18n.js); a different choice reloads the page in it.
 translatePage()
 {
@@ -44,10 +56,6 @@ translatePage()
     location.reload()
   }
 }
-
-mermaid.registerIconPacks(iconPacks())
-mermaid.registerLayoutLoaders(tidyTree) // its layout code loads the first time a mind map takes it
-await mermaid.registerExternalDiagrams([zenuml]) // ZenUML itself (3 MB) loads with the first ZenUML diagram
 
 const dark = matchMedia('(prefers-color-scheme: dark)').matches
 // A draw slower than this (ms) makes the next one wait for a longer pause in typing.
@@ -100,7 +108,7 @@ function applyTheme(choice, look, layout) {
     kanban: natural,
     treemap: natural,
   }
-  mermaid.initialize(currentConfig)
+  void mermaidReady.then(mermaid => mermaid.initialize(currentConfig)) // the config chosen last, once loaded
   document.documentElement.dataset.canvas = isDarkTheme(theme) ? 'dark' : 'light'
 }
 // The theme, look and layout chosen last (the menus below show them too).
@@ -159,6 +167,7 @@ function renderDiff(pre, diff) {
 
 // The parser's error as a finding on its line ("Parse error on line 12").
 async function parseFinding(text) {
+  const mermaid = await mermaidReady
   try {
     await mermaid.parse(text)
     return undefined
@@ -191,7 +200,8 @@ async function checkSource(text, forAgent = false) {
 // (the look and layout its type takes, themes.js; `extra` on top), so two cards never mix theirs.
 let drawing = Promise.resolve()
 function renderWith(id, text, extra = {}, type = typeOf(text)) {
-  const run = drawing.then(() => {
+  const run = drawing.then(async () => {
+    const mermaid = await mermaidReady
     const { look, layout } = fitTo(type, currentConfig.look, currentConfig.layout)
     mermaid.initialize({ ...currentConfig, look, layout, ...extra })
     return mermaid.render(id, text)

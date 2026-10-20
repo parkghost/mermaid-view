@@ -47,8 +47,10 @@ from it. `claude plugin marketplace update parkghost-mermaid-view` picks up new 
 
 Runs on Linux, WSL and macOS. Needs `python3` 3.9 or newer (standard library only; the one macOS
 ships will do), `git` for history (optional), and a way to open the browser: `wslview` (WSL),
-`xdg-open` (Linux) or `open` (macOS). Monaco and Mermaid load from cdn.jsdelivr.net. When the editor
-cannot start, a toast says why and diagrams open as a static page instead of the editor.
+`xdg-open` (Linux) or `open` (macOS). Monaco, Mermaid and the icon sets come from cdn.jsdelivr.net
+the first time the page uses each file, and are kept in the data folder's `vendor/`: after that the
+editor works offline. When the editor cannot start, a toast says why and diagrams open as a static
+page instead of the editor, which needs the CDN.
 
 Once installed, a Claude answer with a ` ```mermaid ` block opens in the editor; `/mermaid` shows the
 last page again, or before any diagram has been shown, opens the editor on the project's files.
@@ -78,7 +80,7 @@ Set in `/config` (or `pluginConfigs["mermaid-view"].options` in `~/.claude/setti
 
 | Option | Default | |
 |---|---|---|
-| `dataDir` | `~/.local/share/mermaid-view` | Pages, edits and their git history. Pages in the former `~/.cache/mermaid-view` move here once. |
+| `dataDir` | `~/.local/share/mermaid-view` | Pages, edits and their git history, and the page's libraries (`vendor/`, not in the history). Pages in the former `~/.cache/mermaid-view` move here once. |
 | `keepDays` | `90` | Pages neither edited nor pinned are removed after this many days; `0` keeps them all. |
 | `openFiles` | `true` | Open a project document or `.mmd` file Claude writes that holds diagrams (once per file per session). |
 | `reuseTab` | `true` | Show a new answer's diagrams, or a project file Claude writes, in the editor tab already open instead of a new tab; `false` always opens a new tab. |

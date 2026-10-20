@@ -198,6 +198,23 @@ class HistoryTest(unittest.TestCase):
             time.sleep(0.05)
         self.assertEqual(history.text_at(A1, 0, history.log(A1, 0)[0]["commit"]), "flowchart TD\n  A --> E\n")
 
+    def test_the_libraries_kept_from_the_cdn_are_never_committed_even_in_an_older_folder(self):
+        import subprocess
+
+        from history import History
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".gitignore").write_text("outbox.json\n", "utf-8")  # as an older release left it
+            make_page(root, A1, ["flowchart TD\n  A --> B\n"])
+            kept = root / "vendor" / "npm" / "mermaid@12.1.0" / "dist" / "mermaid.esm.min.mjs"
+            kept.parent.mkdir(parents=True)
+            kept.write_text("export default {}", "utf-8")
+            History(root, quiet_secs=60).commit_now("After the libraries")
+            tracked = subprocess.run(["git", "-C", tmp, "ls-files"], capture_output=True, text=True).stdout
+        self.assertIn(f"pages/{A1}/meta.json", tracked)
+        self.assertNotIn("vendor/", tracked)
+
     def test_a_version_takes_a_name(self):
         commit = self.history.log(A1, 0)[0]["commit"]
         self.history.label(A1, commit, "第一版")

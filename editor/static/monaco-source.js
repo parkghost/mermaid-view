@@ -22,21 +22,25 @@ import {
   typeOf,
 } from './mermaid-lang.js'
 
-const CDN = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min'
+// From the CDN through the editor, which keeps it (/vendor/, editor/vendor.py).
+const MONACO = '/vendor/npm/monaco-editor@0.55.1/min'
 const findingsOf = new WeakMap() // model -> the findings its markers show, for quick fixes
 
 let ready
-/** Monaco, loaded once from the CDN, with the Mermaid language registered. */
+/** Monaco, loaded once, with the Mermaid language registered. */
 export function loadMonaco() {
   ready ??= new Promise((resolve, reject) => {
-    // The editor's worker, from the CDN through a same-origin blob; if it cannot start, Monaco
-    // does its work on the page's thread instead. The worker is this exact release's (its name
-    // carries the build's hash).
+    // The editor's worker through a same-origin blob (it still loads when the editor sends the
+    // browser to the CDN for it); if it cannot start, Monaco does its work on the page's thread
+    // instead. The worker is this exact release's (its name carries the build's hash).
+    const base = new URL(MONACO, location.href).href // a blob worker resolves no relative URL
     window.MonacoEnvironment = {
       getWorkerUrl: () =>
         URL.createObjectURL(
           new Blob(
-            [`self.MonacoEnvironment={baseUrl:'${CDN}/'};importScripts('${CDN}/vs/assets/editor.worker-Be8ye1pW.js');`],
+            [
+              `self.MonacoEnvironment={baseUrl:'${base}/'};importScripts('${base}/vs/assets/editor.worker-Be8ye1pW.js');`,
+            ],
             {
               type: 'text/javascript',
             },
@@ -45,13 +49,13 @@ export function loadMonaco() {
     }
     const css = document.createElement('link')
     css.rel = 'stylesheet'
-    css.href = `${CDN}/vs/editor/editor.main.css`
+    css.href = `${base}/vs/editor/editor.main.css`
     document.head.append(css)
     const script = document.createElement('script')
-    script.src = `${CDN}/vs/loader.js`
+    script.src = `${base}/vs/loader.js`
     script.onerror = reject
     script.onload = () => {
-      window.require.config({ paths: { vs: `${CDN}/vs` } })
+      window.require.config({ paths: { vs: `${base}/vs` } })
       window.require(
         ['vs/editor/editor.main'],
         () => {

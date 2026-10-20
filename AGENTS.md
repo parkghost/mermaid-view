@@ -31,7 +31,9 @@ finding rather than silencing it, unless the rule fights a pattern the code uses
   from `.claude-plugin/types/`, written by Claude Code when it loads the mod (ignored by git).
 - `editor/*.py`: the server, Python 3.9+ standard library only. Tests are `editor/test_*.py` (`unittest`).
 - `editor/editor.html`, `editor/static/*.js`: the page, plain ES modules served as they are (no
-  bundler, no `node_modules`). Monaco and Mermaid load from cdn.jsdelivr.net at pinned versions.
+  bundler, no `node_modules`). Monaco, Mermaid and the icon sets come from cdn.jsdelivr.net at
+  pinned versions, through `/vendor/` (`editor/vendor.py`), which keeps each file the page loads in
+  the data folder: name a new library by `/vendor/npm/...`, and add its package to `PACKAGE` there.
   Tests are `editor/static/*.test.mjs` (`node:test`), on the modules that need no DOM.
 - `editor/static/type-*.js`: one module per diagram type, listed in `types.js`; the descriptor's
   fields are documented at the top of `type-core.js`.

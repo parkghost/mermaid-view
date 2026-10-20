@@ -38,6 +38,7 @@ from mcp_tools import (
 from projects import Conflict, Project, Projects, compared, diagrams_of, kind
 from reference import SyntaxReference
 from store import Store
+from vendor import Vendor
 from viewers import Viewers
 
 ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -74,6 +75,7 @@ class Handler(BaseHTTPRequestHandler):
     viewers: Viewers
     checks: Checks
     mcp: mcp.Endpoint
+    vendor: Vendor
     port: int
     # What Claude last wrote to a project file, by (project id, path): the base its edits are
     # compared with. Kept while the server runs.
@@ -207,6 +209,8 @@ class Handler(BaseHTTPRequestHandler):
             file = HERE / "static" / parts[1]
             if file.is_file():
                 return self._static(file)
+        if parts[:2] == ["vendor", "npm"]:
+            return self._vendor(urlsplit(self.path).path[len("/vendor/") :])
         if parts[:2] == ["api", "projects"]:
             return self._get_project(parts)
         if parts == ["api", "events"]:
@@ -227,6 +231,16 @@ class Handler(BaseHTTPRequestHandler):
         if tag in (t.strip() for t in self.headers.get("If-None-Match", "").split(",")):
             return self._send(304, b"", kind, headers)
         self._send(200, file.read_bytes(), kind, headers)
+
+    def _vendor(self, path: str):
+        """A file of the page's libraries (vendor.py): the browser keeps it for good, as a release's
+        files never change; one the CDN could not be fetched for, the browser is sent there."""
+        served = self.vendor.get(path)
+        if served.status == 200:
+            return self._send(200, served.body, served.kind, {"Cache-Control": "public, max-age=31536000, immutable"})
+        if served.status == 302:
+            return self._send(302, b"", "text/plain", {"Location": served.location})
+        self._json({"error": "not found" if served.status == 404 else "bad request"}, served.status)
 
     def _events(self):
         """A page's event stream (Server-Sent Events), open while the page is: a page-only route
@@ -493,6 +507,7 @@ def make_server(store: Store, projects: Projects, port: int) -> ThreadingHTTPSer
     Handler.store = store
     Handler.projects = projects
     Handler.viewers = Viewers()
+    Handler.vendor = Vendor(store.root / "vendor")
     store.on_note = lambda note_id, state: Handler.viewers.broadcast("note", {"id": note_id, "state": state})
     Handler.seen = {}
     Handler.port = port

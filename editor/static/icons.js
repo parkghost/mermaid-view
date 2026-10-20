@@ -3,7 +3,7 @@
 // Mermaid knows: fa, fas, far, fab). Each is an Iconify set, fetched the first time a diagram
 // uses it; an icon of a pack not here draws as a "?".
 
-const ICONIFY = 'https://cdn.jsdelivr.net/npm/@iconify-json'
+const ICONIFY = '/vendor/npm/@iconify-json' // from the CDN through the editor, which keeps them (editor/vendor.py)
 
 /** Each pack's name in a diagram and the Iconify set (package@version) behind it. */
 export const ICON_PACKS = {

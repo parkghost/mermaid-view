@@ -23,6 +23,9 @@ QUIET_SECS = 5.0
 LOG_MAX = 200
 # The repository's own identity: commits never borrow the person's global git config.
 CONFIG = {"user.name": "mermaid-view", "user.email": "mermaid-view@localhost", "commit.gpgsign": "false"}
+# What the history leaves out: where notes were kept before they stayed in memory, and the page's
+# libraries kept from the CDN (vendor.py), megabytes that are no one's edits.
+IGNORED = ("outbox.json", "vendor/")
 
 
 class History:
@@ -77,8 +80,9 @@ class History:
             if have.get(key) != value:
                 self._run("config", key, value, check=False)
         ignore = self.root / ".gitignore"
-        if not ignore.exists():
-            ignore.write_text("outbox.json\n", "utf-8")  # where notes were kept before they stayed in memory
+        lines = ignore.read_text("utf-8").splitlines() if ignore.exists() else []
+        if missing := [name for name in IGNORED if name not in lines]:  # a folder of an older release lacks some
+            ignore.write_text("".join(f"{line}\n" for line in lines + missing), "utf-8")
         self.commit_now("Changes from before this start")
 
     def changed(self, message: str) -> None:
