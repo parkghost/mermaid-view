@@ -64,6 +64,7 @@ export default {
   "Claude's original": 'Claude 原本的版本',
   'Click again to delete': '再按一次刪除',
   'Click or drag to move there': '點或拖曳，移動到那個位置',
+  'Could not load {url}': '無法載入 {url}',
   Close: '關閉',
   Compare: '比較',
   'Compared with the version of {when} (- then, + now)': '與 {when} 的版本比較（- 那時，+ 現在）',

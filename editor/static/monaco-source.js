@@ -53,7 +53,7 @@ export function loadMonaco() {
     document.head.append(css)
     const script = document.createElement('script')
     script.src = `${base}/vs/loader.js`
-    script.onerror = reject
+    script.onerror = () => reject(new Error(t('Could not load {url}', { url: script.src })))
     script.onload = () => {
       window.require.config({ paths: { vs: `${base}/vs` } })
       window.require(

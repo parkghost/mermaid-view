@@ -536,6 +536,33 @@ test('/mermaid shows the last page in the open tab, and opens a tab only when no
   expect(ran.filter(argv => argv[0] === 'wslview').length).toBe(2)
 })
 
+test('/mermaid opens the last page at the port of an editor that started again', async ($, on) => {
+  const ports = [8771, 8772] // its own port taken by then: it starts on another
+  let stop = () => {}
+  const ran: (readonly string[])[] = []
+  mock.env(on, { HOME: '/home/tester' })
+  on('process.spawn', async function* () {
+    yield { stream: 'stdout' as const, text: `PORT ${ports.shift()}\n` }
+    await new Promise<void>(resolve => (stop = resolve)) // runs until it ends
+    return { value: { code: 0, signal: null } }
+  })
+  on('fs.write', () => ({ value: undefined }))
+  on('http.fetch', ($, e) => ok(e.url.endsWith('/api/show') ? '{"shown":false}' : '{"id":"2026-10-11T07-09-36-825"}'))
+  on('process.run', ($, e) => {
+    ran.push(e.argv)
+    return exited(0)
+  })
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+
+  await $.turn.complete(turnEnd(ANSWER))
+  await settle(() => ran.length > 0)
+  expect(ran[0]?.[1]).toMatch(/^http:\/\/localhost:8771\/d\//)
+  stop() // the editor ends: killed, or it failed
+  await settle()
+  await $.command.run(typedMermaid)
+  expect(ran.at(-1)?.[1]).toBe(ran[0]?.[1]?.replace(':8771/', ':8772/'))
+})
+
 test('/mermaid with nothing shown yet opens the editor on the project files', async ($, on) => {
   const { opened } = projectSession(on, {})
   const out = await $.command.run(typedMermaid)

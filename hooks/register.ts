@@ -395,6 +395,18 @@ async function editorHome($: EngineInterface): Promise<string | undefined> {
   return p === undefined ? undefined : `http://localhost:${p}${info ? `/f/${info.id}` : '/d'}`
 }
 
+/**
+ * What /mermaid shows: the last page, at the editor's port now (one that ended starts again, on
+ * another port when its own is taken), or a static page's file as it is; with nothing shown yet,
+ * the editor's own page. Undefined when the editor cannot run.
+ */
+async function lastTarget($: EngineInterface): Promise<string | undefined> {
+  const page = lastPage && /^http:\/\/localhost:\d+(\/.*)$/.exec(lastPage)
+  if (!page) return lastPage ?? editorHome($)
+  const p = await ensureServer($)
+  return p === undefined ? undefined : `http://localhost:${p}${page[1]}`
+}
+
 /** A path inside the project, relative to its root; undefined outside it. */
 export function projectPath(root: string, path: string): string | undefined {
   const base = root.endsWith('/') ? root : `${root}/`
@@ -609,7 +621,7 @@ export const register: Register = (on, options) => {
   )
 
   on('command.run', { command: 'mermaid' }, async $ => {
-    const target = lastPage ?? (await editorHome($))
+    const target = await lastTarget($)
     if (!target) return { text: NO_SERVER }
     const p = port
     const origin = `http://localhost:${p}`
