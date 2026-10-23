@@ -6,6 +6,12 @@
 //     and source.
 
 import { t } from './i18n.js'
+import { store, stored } from './prefs.js'
+
+// The last list of a project's files is kept to show at once the next time, while the project is
+// listed again; a list bigger than this is not kept.
+const KEPT_LIST_MAX = 200_000
+
 /** Text for HTML markup, in an element or an attribute's double quotes. */
 export const esc = s =>
   String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
@@ -169,6 +175,14 @@ export class Library {
     return this.refresh()
   }
 
+  /** What the page shows now, lit in the list as it is: show() without listing again. A list still
+   * on its way lights it when it comes. */
+  mark(current) {
+    this.current = current
+    if (this.tab === 'files' && this.#filesOf === this.projectId) this.renderFiles()
+    else if (this.tab === 'pages' && this.pages.length) this.render()
+  }
+
   // The projects are listed again as the files tab opens, else kept while it stays open.
   #projects = null
   #switchTo(tab) {
@@ -199,6 +213,13 @@ export class Library {
   }
 
   async refreshFiles(query) {
+    const listFiles = id => this.api(`/api/projects/${id}/files?${new URLSearchParams({ q: query })}`)
+    // The project's files asked for at once, alongside the projects (not after them); until they
+    // come, the list they were last time.
+    const asked = this.projectId
+    const listed = asked ? listFiles(asked) : null
+    listed?.catch(() => {}) // awaited below, unless the project turns out to be gone
+    if (asked && !query) this.#showKept(asked)
     // A project not in the list kept (none yet, or one opened since) lists them again.
     if (!this.#projects?.some(p => p.id === this.projectId)) this.#projects = (await this.api('/api/projects')).projects
     const projects = this.#projects
@@ -211,11 +232,31 @@ export class Library {
     if (!projects.some(p => p.id === this.projectId)) this.projectId = projects[0].id
     select.innerHTML = projectOptions(projects, p => ` title="${esc(p.root)}"`)
     select.value = this.projectId
-    const params = new URLSearchParams({ q: query })
-    const { files } = await this.api(`/api/projects/${this.projectId}/files?${params}`)
+    const { files } = await (this.projectId === asked ? listed : listFiles(this.projectId))
     this.files = files
+    this.#filesOf = this.projectId
     this.renderFiles()
+    if (!query) {
+      const kept = JSON.stringify(files)
+      if (kept.length <= KEPT_LIST_MAX) store(`files.${this.projectId}`, kept)
+    }
   }
+
+  // The project's files as listed last time, shown while they are listed again (when the list
+  // shows no files of this project yet).
+  #showKept(projectId) {
+    if (this.#filesOf === projectId) return
+    try {
+      const kept = JSON.parse(stored(`files.${projectId}`, '[]'))
+      if (!Array.isArray(kept) || !kept.length) return
+      this.files = kept
+      this.#filesOf = projectId
+      this.renderFiles()
+    } catch {
+      // nothing kept, or not as this release keeps it: the list comes with the answer
+    }
+  }
+  #filesOf = '' // the project whose files this.files holds
 
   renderFiles() {
     if (!this.files.length) {

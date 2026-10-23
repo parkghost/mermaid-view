@@ -188,6 +188,9 @@ class Project:
         self.root = root.resolve()
         self.name = self.root.name
         self.git = ProjectGit(self.root)
+        # Each listed file's diagrams by its path, with the time and size they were read at: a
+        # listing reads again only the files changed since the one before it.
+        self._scanned: dict[str, tuple[tuple[int, int], list[dict]]] = {}
 
     def info(self) -> dict:
         return {
@@ -257,18 +260,37 @@ class Project:
         except (OSError, UnicodeDecodeError):
             return None
 
+    def _diagrams_in(self, path: Path, rel: str, file_kind: str, scanned: dict) -> tuple[list[dict], float]:
+        """The file's diagrams and its time, read from disk only when its time or size changed
+        since the last listing (else as that one found them); recorded in `scanned`."""
+        try:
+            st = path.stat()
+        except OSError:
+            return [], 0.0
+        stamp = (st.st_mtime_ns, st.st_size)
+        known = self._scanned.get(rel)
+        if known and known[0] == stamp:
+            diagrams = known[1]
+        else:
+            text = self._text(path)
+            # Cheap test first: most documents have no diagram.
+            diagrams = (
+                []
+                if text is None or (file_kind == "markdown" and "mermaid" not in text)
+                else diagrams_of(text, file_kind)
+            )
+        scanned[rel] = (stamp, diagrams)
+        return diagrams, st.st_mtime
+
     def files(self, query: str = "") -> list[dict]:
         """The project's files that hold diagrams, newest first; with a query, those whose path or
         diagrams hold every term, each with up to three matching lines."""
         terms = [t.lower() for t in query.split() if t]
         found = []
+        scanned: dict[str, tuple[tuple[int, int], list[dict]]] = {}
         for path, rel in self._walk():
             file_kind = kind(path)
-            text = self._text(path)
-            # Cheap test first: most documents have no diagram.
-            if text is None or (file_kind == "markdown" and "mermaid" not in text):
-                continue
-            diagrams = diagrams_of(text, file_kind)
+            diagrams, mtime = self._diagrams_in(path, rel, file_kind, scanned)
             if not diagrams:
                 continue
             if terms and not all(t in (rel + " " + " ".join(d["text"] for d in diagrams)).lower() for t in terms):
@@ -280,10 +302,11 @@ class Project:
                     "kind": file_kind,
                     "count": len(diagrams),
                     "kinds": [diagram_kind(d["text"]) for d in diagrams],
-                    "mtime": path.stat().st_mtime,
+                    "mtime": mtime,
                     "matches": matches,
                 }
             )
+        self._scanned = scanned  # the files gone since are forgotten
         found.sort(key=lambda f: f["mtime"], reverse=True)
         return found
 

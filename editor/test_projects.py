@@ -134,6 +134,16 @@ class ProjectTest(unittest.TestCase):
         self.assertEqual([f["path"] for f in found], ["docs/diagrams/flow.mmd"])
         self.assertEqual(found[0]["matches"][0]["text"], "Router --> LLM")
 
+    def test_a_file_changed_since_the_last_listing_is_listed_as_it_is_now(self):
+        self.assertEqual(self.project.files("zebra"), [])
+        flow = self.root / "docs" / "diagrams" / "flow.mmd"
+        flow.write_text("flowchart LR\n  Zebras --> LLM\n", "utf-8")  # the same size: only its time tells
+        later = flow.stat().st_mtime + 10
+        os.utime(flow, (later, later))
+        self.assertEqual([f["path"] for f in self.project.files("zebra")], ["docs/diagrams/flow.mmd"])
+        flow.unlink()
+        self.assertNotIn("docs/diagrams/flow.mmd", [f["path"] for f in self.project.files()])
+
     def test_the_config_names_the_files(self):
         (self.root / ".mermaid-view.json").write_text(
             json.dumps({"include": ["docs/diagrams/**/*.mmd"], "diagramsDir": "design"}), "utf-8"

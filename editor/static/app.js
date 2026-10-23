@@ -28,20 +28,31 @@ import { VersionPanel } from './versions.js'
 import { Minimap, Viewport } from './viewport.js'
 import { startWebMcp } from './webmcp.js'
 
-// Mermaid and its two add-ons, loading from the start but awaited only by what draws or parses: the
-// library and the page around the cards do not wait for them (static imports would hold the whole
-// module, and with it the list of project files, until they came). From the CDN through the editor,
-// which keeps them (/vendor/, editor/vendor.py).
-const mermaidReady = Promise.all([
-  import('/vendor/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs'),
-  import('/vendor/npm/@mermaid-js/layout-tidy-tree@1.0.1/dist/mermaid-layout-tidy-tree.esm.min.mjs'),
-  import('/vendor/npm/@mermaid-js/mermaid-zenuml@1.0.1/dist/mermaid-zenuml.esm.min.mjs'),
-]).then(async ([{ default: mermaid }, { default: tidyTree }, { default: zenuml }]) => {
-  mermaid.registerIconPacks(iconPacks())
-  mermaid.registerLayoutLoaders(tidyTree) // its layout code loads the first time a mind map takes it
-  await mermaid.registerExternalDiagrams([zenuml]) // ZenUML itself (3 MB) loads with the first ZenUML diagram
-  return mermaid
+// Mermaid and its two add-ons, awaited only by what draws or parses: the library and the page
+// around the cards do not wait for them (static imports would hold the whole module, and with it
+// the list of project files, until they came). They load once the library has listed its pages or
+// files, or after LIST_FIRST ms: loading them sooner takes the page's thread from that list. From the
+// CDN through the editor, which keeps them (/vendor/, editor/vendor.py).
+const LIST_FIRST = 1000
+let listed
+const listShown = new Promise(resolve => {
+  listed = resolve
+  setTimeout(resolve, LIST_FIRST)
 })
+const mermaidReady = listShown
+  .then(() =>
+    Promise.all([
+      import('/vendor/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs'),
+      import('/vendor/npm/@mermaid-js/layout-tidy-tree@1.0.1/dist/mermaid-layout-tidy-tree.esm.min.mjs'),
+      import('/vendor/npm/@mermaid-js/mermaid-zenuml@1.0.1/dist/mermaid-zenuml.esm.min.mjs'),
+    ]),
+  )
+  .then(async ([{ default: mermaid }, { default: tidyTree }, { default: zenuml }]) => {
+    mermaid.registerIconPacks(iconPacks())
+    mermaid.registerLayoutLoaders(tidyTree) // its layout code loads the first time a mind map takes it
+    await mermaid.registerExternalDiagrams([zenuml]) // ZenUML itself (3 MB) loads with the first ZenUML diagram
+    return mermaid
+  })
 
 // The page's text in its language (i18n.js); a different choice reloads the page in it.
 translatePage()
@@ -738,7 +749,7 @@ async function showUrl(url, view) {
   }
   pageActions(null, view.signal)
   setTitle(BASE_TITLE)
-  library.show({ kind: 'page', diagrams: [] })
+  showLibrary({ kind: 'page', diagrams: [] })
   $('#cards').innerHTML = `<div class="empty">${t('No diagrams yet.')}</div>`
 }
 
@@ -748,19 +759,23 @@ async function loadDocument(doc, view, projectId) {
   if (!doc) {
     pageActions(null, view.signal)
     setTitle(BASE_TITLE)
-    library.show({ kind: 'file', projectId, diagrams: [] })
+    showLibrary({ kind: 'file', projectId, diagrams: [] })
     cards.innerHTML = `<div class="empty">${t('Pick a file in the project files on the left.')}</div>`
     return
   }
+  // A project's files are listed while the file is read (their list needs nothing of it); a page's
+  // list, filtered by the page's project, once the page is read.
+  const file = doc.kind === 'file'
+  if (file) showLibrary({ kind: 'file', projectId: doc.projectId, path: doc.path, diagrams: [] })
   await doc.load()
   view.doc = doc
   setTitle(`${doc.title} · mermaid-view`)
   pageActions(doc, view.signal)
-  const context =
-    doc.kind === 'page'
-      ? { kind: 'page', id: doc.id, project: doc.page.project, diagrams: doc.diagrams }
-      : { kind: 'file', projectId: doc.projectId, path: doc.path, diagrams: doc.diagrams }
-  library.show(context)
+  const context = file
+    ? { kind: 'file', projectId: doc.projectId, path: doc.path, diagrams: doc.diagrams }
+    : { kind: 'page', id: doc.id, project: doc.page.project, diagrams: doc.diagrams }
+  if (file) library.mark(context)
+  else showLibrary(context)
   cards.innerHTML = `<div class="empty">${t('Loading the editor…')}</div>`
   await loadMonaco() // once; the browser caches it after
   cards.innerHTML = doc.diagrams.length ? '' : `<div class="empty">${t('This file has no Mermaid diagrams.')}</div>`
@@ -1200,6 +1215,12 @@ document.addEventListener('click', e => {
 addEventListener('popstate', () => navigate(location.href, { pop: true }))
 
 const library = new Library($('#library'), api, url => navigate(url))
+/** The library on what the page shows; Mermaid starts loading once its first list is in. */
+function showLibrary(context) {
+  const shown = library.show(context)
+  shown.then(listed, listed)
+  return shown
+}
 libraryPanel()
 navigate(location.href, { replace: true })
 
