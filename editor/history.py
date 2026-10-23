@@ -21,6 +21,12 @@ from git_log import HASH, commits, log_format
 
 QUIET_SECS = 5.0
 LOG_MAX = 200
+# How long one git command may run: a git that hangs past it is stopped, so it cannot hold the
+# lock (and every commit after it) for good.
+GIT_SECS = 20.0
+# A git lock file older than this was left by a git that died: no git still running holds one
+# so long (each stops by GIT_SECS), so it is removed rather than blocking every commit after it.
+STALE_LOCK_SECS = 60.0
 # The repository's own identity: commits never borrow the person's global git config.
 CONFIG = {"user.name": "mermaid-view", "user.email": "mermaid-view@localhost", "commit.gpgsign": "false"}
 # What the history leaves out: where notes were kept before they stayed in memory, and the page's
@@ -29,9 +35,10 @@ IGNORED = ("outbox.json", "vendor/")
 
 
 class History:
-    def __init__(self, root: Path, quiet_secs: float = QUIET_SECS):
+    def __init__(self, root: Path, quiet_secs: float = QUIET_SECS, git_secs: float = GIT_SECS):
         self.root = root
         self.quiet_secs = quiet_secs
+        self.git_secs = git_secs
         self.git = shutil.which("git")
         self._lock = threading.Lock()  # one git command that writes at a time
         # The changes waiting for a quiet while: their messages, and when it ends (monotonic; None
@@ -48,14 +55,32 @@ class History:
         return self.git is not None
 
     def _run(self, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+        """git's result; a git stopped at git_secs fails as any failed git does (exit code -1)."""
         assert self.git
-        return subprocess.run(
-            [self.git, "-C", str(self.root), *args],
-            capture_output=True,
-            text=True,
-            check=check,
-            env={"GIT_TERMINAL_PROMPT": "0", "PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(self.root)},
-        )
+        try:
+            return subprocess.run(
+                [self.git, "-C", str(self.root), *args],
+                capture_output=True,
+                text=True,
+                check=check,
+                timeout=self.git_secs,
+                env={"GIT_TERMINAL_PROMPT": "0", "PATH": "/usr/bin:/bin:/usr/local/bin", "HOME": str(self.root)},
+            )
+        except subprocess.TimeoutExpired as stopped:
+            if check:
+                raise subprocess.CalledProcessError(-1, stopped.cmd) from stopped
+            return subprocess.CompletedProcess(stopped.cmd, -1, "", "")
+
+    def _clear_stale_locks(self) -> None:
+        """Removes the lock files a git killed mid-commit left behind (index, HEAD, a branch's ref);
+        a recent one is left alone, as another server's git may be running now."""
+        git_dir = self.root / ".git"
+        for lock in [*git_dir.glob("*.lock"), *git_dir.glob("refs/heads/**/*.lock")]:
+            try:
+                if time.time() - lock.stat().st_mtime > STALE_LOCK_SECS:
+                    lock.unlink()
+            except OSError:
+                pass  # gone already, or not ours to remove: the commit fails as before
 
     def _init(self) -> None:
         made = not (self.root / ".git").exists()
@@ -115,11 +140,12 @@ class History:
     def commit_now(self, message: str) -> bool:
         """Commits everything changed; False when there was nothing to commit, or git could not:
         another server on this folder holds the repository's lock (each Claude Code session runs
-        its own), or a git killed mid-commit left it behind. What changed goes with a later commit;
-        the page itself is saved either way."""
+        its own). What changed goes with a later commit; the page itself is saved either way. A lock
+        a git killed mid-commit left behind is removed once it is stale, so history does not stop."""
         if not self.enabled:
             return False
         with self._lock:
+            self._clear_stale_locks()
             try:
                 self._run("add", "-A", ".")
                 if self._run("diff", "--cached", "--quiet", check=False).returncode == 0:

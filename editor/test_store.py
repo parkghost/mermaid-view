@@ -238,6 +238,38 @@ class HistoryTest(unittest.TestCase):
         (self.root / ".git" / "index.lock").unlink()
         self.assertTrue(store.history.commit_now("After the lock"))  # what waited is committed then
 
+    def test_a_lock_a_killed_git_left_long_ago_stops_no_commit_after_it(self):
+        lock = self.root / ".git" / "index.lock"
+        lock.write_text("", "utf-8")
+        long_ago = time.time() - 3600
+        os.utime(lock, (long_ago, long_ago))
+        self.store.save(A1, 0, "flowchart TD\n  A --> E\n")
+        self.history.flush()
+        self.assertEqual(self.history.text_at(A1, 0, self.history.log(A1, 0)[0]["commit"]), "flowchart TD\n  A --> E\n")
+
+    def test_a_recent_lock_is_left_to_the_git_that_may_hold_it(self):
+        lock = self.root / ".git" / "index.lock"
+        lock.write_text("", "utf-8")  # another server's git, committing now
+        self.assertFalse(self.history.commit_now("Not now"))
+        self.assertTrue(lock.exists())
+
+    @unittest.skipIf(os.name == "nt", "a shell script stands in for git")
+    def test_a_git_that_hangs_is_stopped_and_frees_the_commits_after_it(self):
+        from history import History
+
+        history = History(self.root, quiet_secs=60, git_secs=0.5)
+        hanging = self.root / "hanging-git"
+        hanging.write_text("#!/bin/sh\nexec sleep 30\n", "utf-8")
+        hanging.chmod(0o755)
+        real, history.git = history.git, str(hanging)
+        started = time.monotonic()
+        self.assertFalse(history.commit_now("Hangs"))
+        self.assertEqual(history.log(A1, 0), [])
+        self.assertLess(time.monotonic() - started, 10)
+        history.git = real
+        self.store.save(A1, 0, "flowchart TD\n  A --> F\n")
+        self.assertTrue(history.commit_now("After the hang"))
+
     def test_a_created_page_is_written_and_committed(self):
         first = self.store.create(
             ["%% from an agent\nflowchart LR\n  X --> Y", "sequenceDiagram\n  A->>B: hi"],
