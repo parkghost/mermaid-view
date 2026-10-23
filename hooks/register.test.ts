@@ -216,6 +216,33 @@ test('with the page server running, an answer becomes a page opened by its URL',
   expect(ran[0]?.[1]).toBe('http://localhost:8771/d/2026-10-11T07-09-36-825')
 })
 
+test("a page carries the project's branch, and no branch on a detached HEAD", async ($, on) => {
+  editorRunning(on)
+  on('session.root', () => ({ value: '/home/tester/proj' }))
+  const created: string[] = []
+  let current = 'feature/login\n'
+  on('http.fetch', ($, e) => {
+    if (e.url.endsWith('/api/pages')) created.push(String(e.init?.body ?? ''))
+    return ok(e.url.endsWith('/api/pages') ? '{"id":"2026-10-11T07-09-36-825"}' : '{"shown":false}')
+  })
+  // git as it answers `branch --show-current`: the branch, or nothing on a detached HEAD.
+  on('process.run', ($, e) =>
+    e.argv[0] === 'git' && e.argv.includes('--show-current')
+      ? { value: { ...exited(0).value, stdout: current } }
+      : exited(e.argv[0] === 'git' ? 128 : 0),
+  )
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+
+  await $.turn.complete(turnEnd(ANSWER))
+  await settle(() => created.length > 0)
+  current = ''
+  await $.turn.complete(turnEnd(ANSWER))
+  await settle(() => created.length > 1)
+
+  expect(created.map(body => JSON.parse(body).branch)).toEqual(['feature/login', ''])
+  expect(JSON.parse(created[0] ?? '{}').project).toBe('proj')
+})
+
 // A page's edit whose source holds a line of ```, and the editor's report of it (its fence longer).
 const FENCE_LINE = 'flowchart TD\n  A --> C\n```'
 const PAGE = {

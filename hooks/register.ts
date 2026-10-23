@@ -320,14 +320,13 @@ async function takeOutbox($: EngineInterface): Promise<void> {
 }
 
 // Where the answer was given: the project (its root, named by its last folder), the git branch
-// and the session. Each part is "" when it cannot be told.
+// and the session. Each part is "" when it cannot be told; the branch also on a detached HEAD.
+// `branch --show-current` names a branch with no commits yet, which `rev-parse` cannot.
 async function origin($: EngineInterface) {
   const root = await $.session.root().catch(() => '')
   const [ran, session] = await Promise.all([
     root
-      ? $.process
-          .run(['git', '-C', root, 'rev-parse', '--abbrev-ref', 'HEAD'], { timeoutMs: 5000 })
-          .catch(() => undefined)
+      ? $.process.run(['git', '-C', root, 'branch', '--show-current'], { timeoutMs: 5000 }).catch(() => undefined)
       : undefined,
     $.session.id().catch(() => ''),
   ])
