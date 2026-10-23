@@ -42,6 +42,10 @@
 
   /* Below the header: the library and the cards, filling the window. */
   .layout { flex: 1; min-height: 0; display: flex; }
+  /* Where Mermaid lays a drawing out while it measures it: out of the page's flow (in the body's
+     flex column it took room from the layout and the cards shrank, then sprang back), as wide as the
+     window as the body was, and unseen; laid out still, as measuring needs. */
+  #draw-room { position: fixed; left: 0; top: 0; width: 100%; visibility: hidden; pointer-events: none; z-index: -1; }
   #library { width: var(--lib-w, 290px); flex: none; display: flex; flex-direction: column; border-right: 1px solid var(--line);
              background: var(--panel); min-height: 0; }
   body.lib-hidden #library, body.lib-hidden .lib-split { display: none; }
@@ -214,6 +218,7 @@
   <div class="lib-split" data-i18n-title="Drag to resize; double-click to reset"></div>
   <main id="cards"><div class="empty" data-i18n="Loading…">Loading…</div></main>
 </div>
+<div id="draw-room" aria-hidden="true"></div>
 <script type="module" src="/static/app.js"></script>
 </body>
 </html>

@@ -210,13 +210,14 @@ async function checkSource(text, forAgent = false) {
 
 // Every drawing, one at a time: mermaid's settings are global, and each drawing sets its own first
 // (the look and layout its type takes, themes.js; `extra` on top), so two cards never mix theirs.
+// Mermaid lays each out in #draw-room, out of the page's flow (else it appends it to the body).
 let drawing = Promise.resolve()
 function renderWith(id, text, extra = {}, type = typeOf(text)) {
   const run = drawing.then(async () => {
     const mermaid = await mermaidReady
     const { look, layout } = fitTo(type, currentConfig.look, currentConfig.layout)
     mermaid.initialize({ ...currentConfig, look, layout, ...extra })
-    return snappedSizes(() => mermaid.render(id, text))
+    return snappedSizes(() => mermaid.render(id, text, document.getElementById('draw-room')))
   })
   drawing = run.catch(() => {})
   return run
