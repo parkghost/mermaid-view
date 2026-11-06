@@ -148,7 +148,9 @@ class History:
             self._clear_stale_locks()
             try:
                 self._run("add", "-A", ".")
-                if self._run("diff", "--cached", "--quiet", check=False).returncode == 0:
+                # 1: changes to commit; 0: none; else git failed or was stopped, and a commit
+                # would only wait as long again.
+                if self._run("diff", "--cached", "--quiet", check=False).returncode != 1:
                     return False
                 self._run("commit", "-q", "-m", message)
             except (OSError, subprocess.CalledProcessError):

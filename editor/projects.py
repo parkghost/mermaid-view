@@ -252,9 +252,10 @@ class Project:
                     return
                 yield path, rel
 
-    def _text(self, path: Path) -> str | None:
+    def _text(self, path: Path, size: int) -> str | None:
+        """The file's text, None when it is bigger than MAX_FILE (`size`, as stat gave it) or not text."""
         try:
-            if path.stat().st_size > MAX_FILE:
+            if size > MAX_FILE:
                 return None
             return path.read_text("utf-8")
         except (OSError, UnicodeDecodeError):
@@ -272,7 +273,7 @@ class Project:
         if known and known[0] == stamp:
             diagrams = known[1]
         else:
-            text = self._text(path)
+            text = self._text(path, st.st_size)
             # Cheap test first: most documents have no diagram.
             diagrams = (
                 []

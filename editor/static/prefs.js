@@ -18,3 +18,12 @@ export const store = (key, value) => {
     // storage off: the choice lasts for this page only
   }
 }
+
+/** Forgets a choice: a read then gives the fallback. */
+export const forget = key => {
+  try {
+    localStorage.removeItem(`mermaid-view.${key}`)
+  } catch {
+    // storage off: nothing was kept
+  }
+}

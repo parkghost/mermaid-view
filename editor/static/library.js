@@ -6,7 +6,7 @@
 //     and source.
 
 import { t } from './i18n.js'
-import { store, stored } from './prefs.js'
+import { forget, store, stored } from './prefs.js'
 
 // The last list of a project's files is kept to show at once the next time, while the project is
 // listed again; a list bigger than this is not kept.
@@ -175,12 +175,11 @@ export class Library {
     return this.refresh()
   }
 
-  /** What the page shows now, lit in the list as it is: show() without listing again. A list still
-   * on its way lights it when it comes. */
+  /** What the page shows now, a project file, lit in the list as it is: show() without listing
+   * again. A list still on its way lights it when it comes. */
   mark(current) {
     this.current = current
     if (this.tab === 'files' && this.#filesOf === this.projectId) this.renderFiles()
-    else if (this.tab === 'pages' && this.pages.length) this.render()
   }
 
   // The projects are listed again as the files tab opens, else kept while it stays open.
@@ -197,22 +196,28 @@ export class Library {
     return this.tab === 'files' ? { projectId: this.projectId, files: this.files } : { pages: this.pages }
   }
 
+  // Each refresh's number: an answer that comes after a later refresh began is dropped, so a slow
+  // list never takes the place of the one asked for since (another project, or the other tab).
+  #asked = 0
+
   async refresh(query = this.query) {
+    const ask = ++this.#asked
     this.query = query
     for (const b of this.root.querySelectorAll('[data-tab]')) b.classList.toggle('on', b.dataset.tab === this.tab)
     const files = this.tab === 'files'
     this.root.querySelector('.chips').hidden = files
     this.root.querySelector('.lib-project').hidden = !files
     this.search.placeholder = files ? t('Search paths, nodes, source…') : t('Search titles, nodes, source…')
-    if (files) return this.refreshFiles(query)
+    if (files) return this.#refreshFiles(query, ask)
     const params = new URLSearchParams({ q: query })
     if (this.filters.here) params.set('project', this.current.project || '')
     const { pages } = await this.api(`/api/pages?${params}`)
+    if (ask !== this.#asked) return
     this.pages = pages.filter(p => (!this.filters.edited || p.edited) && (!this.filters.pinned || p.pinned))
     this.render()
   }
 
-  async refreshFiles(query) {
+  async #refreshFiles(query, ask) {
     const listFiles = id => this.api(`/api/projects/${id}/files?${new URLSearchParams({ q: query })}`)
     // The project's files asked for at once, alongside the projects (not after them); until they
     // come, the list they were last time.
@@ -221,24 +226,38 @@ export class Library {
     listed?.catch(() => {}) // awaited below, unless the project turns out to be gone
     if (asked && !query) this.#showKept(asked)
     // A project not in the list kept (none yet, or one opened since) lists them again.
-    if (!this.#projects?.some(p => p.id === this.projectId)) this.#projects = (await this.api('/api/projects')).projects
+    if (!this.#projects?.some(p => p.id === asked)) {
+      const { projects } = await this.api('/api/projects')
+      if (ask !== this.#asked) return
+      this.#projects = projects
+    }
     const projects = this.#projects
+    // A project no longer registered: its kept list is forgotten, and no longer shown.
+    if (asked && !projects.some(p => p.id === asked)) {
+      forget(`files.${asked}`)
+      this.files = []
+      this.#filesOf = ''
+    }
     const select = this.root.querySelector('.lib-project')
     if (!projects.length) {
       select.innerHTML = ''
       this.list.innerHTML = `<div class="lib-empty">${t('No projects registered yet. Use Claude Code in a project, or run')}<br><code>mermaid_view.py --project ${t('DIR')}</code></div>`
       return
     }
-    if (!projects.some(p => p.id === this.projectId)) this.projectId = projects[0].id
+    const id = projects.some(p => p.id === asked) ? asked : projects[0].id
+    this.projectId = id
     select.innerHTML = projectOptions(projects, p => ` title="${esc(p.root)}"`)
-    select.value = this.projectId
-    const { files } = await (this.projectId === asked ? listed : listFiles(this.projectId))
+    select.value = id
+    const { files } = await (id === asked ? listed : listFiles(id))
+    if (ask !== this.#asked) return
     this.files = files
-    this.#filesOf = this.projectId
+    this.#filesOf = id
     this.renderFiles()
     if (!query) {
+      // A list too big to keep is forgotten, not left as it was when it was smaller.
       const kept = JSON.stringify(files)
-      if (kept.length <= KEPT_LIST_MAX) store(`files.${this.projectId}`, kept)
+      if (kept.length <= KEPT_LIST_MAX) store(`files.${id}`, kept)
+      else forget(`files.${id}`)
     }
   }
 

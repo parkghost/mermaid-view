@@ -250,8 +250,11 @@ class HistoryTest(unittest.TestCase):
     def test_a_recent_lock_is_left_to_the_git_that_may_hold_it(self):
         lock = self.root / ".git" / "index.lock"
         lock.write_text("", "utf-8")  # another server's git, committing now
+        self.store.save(A1, 0, "flowchart TD\n  A --> G\n")  # a change that would be committed
         self.assertFalse(self.history.commit_now("Not now"))
         self.assertTrue(lock.exists())
+        lock.unlink()
+        self.assertTrue(self.history.commit_now("Once it is gone"))  # what waited was not lost
 
     @unittest.skipIf(os.name == "nt", "a shell script stands in for git")
     def test_a_git_that_hangs_is_stopped_and_frees_the_commits_after_it(self):
@@ -269,6 +272,24 @@ class HistoryTest(unittest.TestCase):
         history.git = real
         self.store.save(A1, 0, "flowchart TD\n  A --> F\n")
         self.assertTrue(history.commit_now("After the hang"))
+
+    @unittest.skipIf(os.name == "nt", "a shell script stands in for git")
+    def test_a_diff_that_is_stopped_is_not_followed_by_a_commit(self):
+        from history import History
+
+        history = History(self.root, quiet_secs=60, git_secs=0.5)
+        ran = self.root / "ran"
+        wrapper = self.root / "git-hanging-on-diff"
+        wrapper.write_text(
+            f'#!/bin/sh\nfor a; do echo "$a"; done >> "{ran}"\n'
+            f'case " $* " in *" diff "*) exec sleep 30;; esac\nexec "{history.git}" "$@"\n',
+            "utf-8",
+        )
+        wrapper.chmod(0o755)
+        history.git = str(wrapper)
+        self.store.save(A1, 0, "flowchart TD\n  A --> H\n")
+        self.assertFalse(history.commit_now("Stopped"))
+        self.assertNotIn("commit", ran.read_text("utf-8").split())
 
     def test_a_created_page_is_written_and_committed(self):
         first = self.store.create(
